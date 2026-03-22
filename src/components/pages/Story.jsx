@@ -22,11 +22,6 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     setPlaying(false);
   };
   
-  const handleRestart = () => {
-    stopAll();
-    onNew();
-  };
-
   const handleCopy = () => {
     navigator.clipboard.writeText(story).then(() => {
       setCopied(true);
@@ -77,6 +72,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     }
   };
 
+  const handleRestart = () => { stopAll(); setDimmed(false); setTimeout(handlePlay, 200); };
   useEffect(() => () => stopAll(), []);
 
   return (
