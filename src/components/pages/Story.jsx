@@ -8,6 +8,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   const [playing, setPlaying] = useState(false);
   const [loadingTTS, setLoadingTTS] = useState(false);
   const [dimmed, setDimmed] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(isAlreadySaved);
   const audioRef = useRef(null);
 
@@ -21,6 +22,18 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     setPlaying(false);
   };
   
+  const handleRestart = () => {
+    stopAll();
+    onNew();
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(story).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   const onEnd = () => { setPlaying(false); setDimmed(true); };
 
   const handlePlay = async () => {
@@ -64,7 +77,6 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     }
   };
 
-  const handleRestart = () => { stopAll(); setDimmed(false); setTimeout(handlePlay, 200); };
   useEffect(() => () => stopAll(), []);
 
   return (
@@ -89,13 +101,17 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
           <button className="btn-gold" disabled={loadingTTS} onClick={handlePlay}>
             {loadingTTS ? (lang === 'zh' ? '⏳ 準備語音中...' : '⏳ Loading Audio...') : (playing ? t.pause : t.play)}
           </button>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <button className="btn-ghost" onClick={handleRestart}>{t.restart}</button>
-            <button className="btn-ghost" disabled={saved}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <button className="btn-ghost" style={{ padding: '14px 4px', fontSize: 14 }} onClick={handleRestart}>{t.restart}</button>
+            <button className="btn-ghost" style={{ padding: '14px 4px', fontSize: 13 }} onClick={handleCopy}>
+              {copied ? (lang === 'zh' ? '✅ 已複製' : '✅ Copied') : (lang === 'zh' ? '📋 複製' : '📋 Copy')}
+            </button>
+            <button className="btn-ghost" style={{ padding: '14px 4px', fontSize: 14 }} disabled={saved}
               onClick={() => { onSave(story); setSaved(true); }}>
               {saved ? t.saved : t.save}
             </button>
           </div>
+          <button className="btn-ghost" onClick={() => { stopAll(); onBack(); }}>{t.back}</button>
         </div>
       </div>
     </>
