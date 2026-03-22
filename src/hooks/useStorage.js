@@ -70,9 +70,15 @@ export function useStorage() {
   const doSync = async (token) => {
     setIsSyncing(true);
     try {
-      const merged = await syncWithDrive(token, stories, deletedIds);
-      setStoriesState(merged);
-      localStorage.setItem(SK, JSON.stringify(merged));
+      const payload = await syncWithDrive(token, stories, deletedIds);
+      
+      // 更新故事合輯
+      setStoriesState(payload.stories);
+      localStorage.setItem(SK, JSON.stringify(payload.stories));
+
+      // 更新雲端共同維護的死亡筆記本
+      setDeletedIds(payload.deletedIds);
+      localStorage.setItem('bts_deleted_v2', JSON.stringify(payload.deletedIds));
     } catch (e) {
       if (e.message.includes('401')) {
         sessionStorage.removeItem('GD_TOKEN');

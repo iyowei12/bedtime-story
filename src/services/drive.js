@@ -31,33 +31,49 @@ const findFile = async (token) => {
 // 統步合併邏輯：上傳本地 + 下載雲端
 export const syncWithDrive = async (token, localStories, localDeletedIds = []) => {
   const file = await findFile(token);
-  let cloudStories = [];
+  let cloudData = null;
   let fileId = file?.id;
 
   // 下載雲端現有資料
   if (fileId) {
     const rf = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: getHeaders(token) });
-    if (rf.ok) {
-      cloudStories = await rf.json();
-    }
+    if (rf.ok) cloudData = await rf.json();
   }
 
-  // 濾除在任何一方已被標記刪除的故事
-  cloudStories = cloudStories.filter(cs => !localDeletedIds.includes(cs.id));
-  const activeLocal = localStories.filter(ls => !localDeletedIds.includes(ls.id));
+  let cloudStories = [];
+  let cloudDeletedIds = [];
+  
+  // 向下相容舊版陣列格式
+  if (Array.isArray(cloudData)) {
+    cloudStories = cloudData;
+  } else if (cloudData && typeof cloudData === 'object') {
+    cloudStories = cloudData.stories || [];
+    cloudDeletedIds = cloudData.deletedIds || [];
+  }
 
-  // 合併去重複
-  const merged = [...activeLocal];
+  // 1. 合併「死亡筆記本」(已刪除 ID 列表)
+  const mergedDeletedIds = [...new Set([...localDeletedIds, ...cloudDeletedIds])];
+
+  // 2. 濾除在任何裝置上被標記為刪除的故事
+  cloudStories = cloudStories.filter(cs => !mergedDeletedIds.includes(cs.id));
+  const activeLocal = localStories.filter(ls => !mergedDeletedIds.includes(ls.id));
+
+  // 3. 合併去重複的故事陣列
+  const mergedStories = [...activeLocal];
   cloudStories.forEach(cs => {
-    if (!merged.find(ls => ls.id === cs.id || ls.text === cs.text)) {
-      merged.push(cs);
+    if (!mergedStories.find(ls => ls.id === cs.id || ls.text === cs.text)) {
+      mergedStories.push(cs);
     }
   });
   // 依時間排序 (最新的在前面)
-  merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+  mergedStories.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // 寫回雲端
-  const blob = new Blob([JSON.stringify(merged)], { type: 'application/json' });
+  // 寫回雲端的新格式
+  const payload = {
+    stories: mergedStories,
+    deletedIds: mergedDeletedIds
+  };
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
   
   if (fileId) {
     // 更新舊檔
@@ -74,11 +90,11 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = []) =
     form.append('file', blob);
     
     await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: getHeaders(token), // FormData 會自動生 boundary
+      method: 'POST', // FormData 自動處理 boundary
+      headers: getHeaders(token),
       body: form
     });
   }
 
-  return merged;
+  return payload;
 };
