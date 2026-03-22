@@ -17,7 +17,7 @@ export default function App() {
   const [story, setStory] = useState('');
   const [error, setError] = useState('');
   
-  const { stories, cfg, saveCfg, saveStory, delStory } = useStorage();
+  const { stories, cfg, gToken, isSyncing, saveCfg, saveStory, delStory, handleDriveSync } = useStorage();
   const t = T[lang];
 
   useEffect(() => {
@@ -60,6 +60,7 @@ export default function App() {
   );
   if (page === 'library') return wrap(
     <LibraryPage stories={stories}
+      gToken={gToken} isSyncing={isSyncing} onSync={handleDriveSync}
       onSelect={txt => { setStory(txt); setPage('story'); }}
       onDelete={delStory} onBack={() => setPage('home')} lang={lang} />
   );
