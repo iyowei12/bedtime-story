@@ -107,7 +107,6 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
               {saved ? t.saved : t.save}
             </button>
           </div>
-          <button className="btn-ghost" onClick={() => { stopAll(); onBack(); }}>{t.back}</button>
         </div>
       </div>
     </>
