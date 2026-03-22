@@ -36,6 +36,9 @@ export function useStorage() {
     const upd = [{ id: Date.now(), text, date: new Date().toISOString(), lang }, ...stories];
     setStoriesState(upd);
     localStorage.setItem(SK, JSON.stringify(upd));
+    
+    // 儲存新故事時也自動觸發背景同步
+    if (gToken) handleDriveSync(false);
   };
 
   const delStory = (id) => {
@@ -70,7 +73,11 @@ export function useStorage() {
   const doSync = async (token) => {
     setIsSyncing(true);
     try {
-      const payload = await syncWithDrive(token, stories, deletedIds);
+      // 避免 React 閉包陷阱，永遠從 localStorage 抓取按下同步那一瞬間的最真實資料
+      const currentStories = JSON.parse(localStorage.getItem(SK) || '[]');
+      const currentDeletedIds = JSON.parse(localStorage.getItem('bts_deleted_v2') || '[]');
+      
+      const payload = await syncWithDrive(token, currentStories, currentDeletedIds);
       
       // 更新故事合輯
       setStoriesState(payload.stories);
