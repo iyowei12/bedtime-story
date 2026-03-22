@@ -29,7 +29,7 @@ const findFile = async (token) => {
 };
 
 // 統步合併邏輯：上傳本地 + 下載雲端
-export const syncWithDrive = async (token, localStories) => {
+export const syncWithDrive = async (token, localStories, localDeletedIds = []) => {
   const file = await findFile(token);
   let cloudStories = [];
   let fileId = file?.id;
@@ -42,10 +42,14 @@ export const syncWithDrive = async (token, localStories) => {
     }
   }
 
-  // 合併去重複 (以唯一時間戳或文字內容為基準)
-  const merged = [...localStories];
+  // 濾除在任何一方已被標記刪除的故事
+  cloudStories = cloudStories.filter(cs => !localDeletedIds.includes(cs.id));
+  const activeLocal = localStories.filter(ls => !localDeletedIds.includes(ls.id));
+
+  // 合併去重複
+  const merged = [...activeLocal];
   cloudStories.forEach(cs => {
-    if (!merged.find(ls => ls.text === cs.text || ls.date === cs.date)) {
+    if (!merged.find(ls => ls.id === cs.id || ls.text === cs.text)) {
       merged.push(cs);
     }
   });

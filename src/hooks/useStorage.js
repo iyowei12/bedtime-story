@@ -22,6 +22,7 @@ const load = (k, d) => {
 
 export function useStorage() {
   const [stories, setStoriesState] = useState(() => load(SK, []));
+  const [deletedIds, setDeletedIds] = useState(() => load('bts_deleted_v2', []));
   const [cfg, setCfgState] = useState(() => load(CK, DEFAULT_CFG));
   const [gToken, setGToken] = useState(() => sessionStorage.getItem('GD_TOKEN') || null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -41,6 +42,13 @@ export function useStorage() {
     const upd = stories.filter((s) => s.id !== id);
     setStoriesState(upd);
     localStorage.setItem(SK, JSON.stringify(upd));
+    
+    // 紀錄刪除清單，避免被雲端復活
+    const newDel = [...deletedIds, id];
+    setDeletedIds(newDel);
+    localStorage.setItem('bts_deleted_v2', JSON.stringify(newDel));
+
+    if (gToken) handleDriveSync(false);
   };
 
   const handleDriveSync = async (interactive = true) => {
@@ -62,7 +70,7 @@ export function useStorage() {
   const doSync = async (token) => {
     setIsSyncing(true);
     try {
-      const merged = await syncWithDrive(token, stories);
+      const merged = await syncWithDrive(token, stories, deletedIds);
       setStoriesState(merged);
       localStorage.setItem(SK, JSON.stringify(merged));
     } catch (e) {
