@@ -11,9 +11,15 @@ export async function generateStory({ img, len, cfg, lang }) {
   let text = '';
   if (cfg.aiProvider === 'claude') {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': cfg.aiKey,
+        'anthropic-version': '2023-06-01',
+        'dangerously-allow-browser': 'true'
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+        model: 'claude-3-5-sonnet-20240620', max_tokens: 1200,
         messages: [{
           role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },

@@ -1,4 +1,4 @@
-const CLIENT_ID = '243955988744-kn1moqd9nrhffiqbv8urg9nr7blue3dj.apps.googleusercontent.com';
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const FILE_NAME = 'bedtime_stories_sync.json';
 
