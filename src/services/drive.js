@@ -23,8 +23,11 @@ const getHeaders = (token) => ({
 // 尋找存在 AppData 的備份檔案
 const findFile = async (token) => {
   const r = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'`, { headers: getHeaders(token) });
+  if (!r.ok) {
+    const d = await r.json();
+    throw new Error(`[${r.status}] ${d.error?.message || 'Drive API Error'}`);
+  }
   const d = await r.json();
-  if (d.error) throw new Error(d.error.message);
   return d.files?.length > 0 ? d.files[0] : null;
 };
 
@@ -37,7 +40,11 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = []) =
   // 下載雲端現有資料
   if (fileId) {
     const rf = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: getHeaders(token) });
-    if (rf.ok) cloudData = await rf.json();
+    if (!rf.ok) {
+      const d = await rf.json();
+      throw new Error(`[${rf.status}] ${d.error?.message || 'Download Error'}`);
+    }
+    cloudData = await rf.json();
   }
 
   let cloudStories = [];
@@ -77,11 +84,15 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = []) =
   
   if (fileId) {
     // 更新舊檔
-    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
       method: 'PATCH',
       headers: getHeaders(token),
       body: blob
     });
+    if (!res.ok) {
+      const d = await res.json();
+      throw new Error(`[${res.status}] ${d.error?.message || 'Update Error'}`);
+    }
   } else {
     // 建立新檔 (Multipart upload)
     const metadata = { name: FILE_NAME, parents: ['appDataFolder'] };
@@ -89,11 +100,15 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = []) =
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', blob);
     
-    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method: 'POST', // FormData 自動處理 boundary
       headers: getHeaders(token),
       body: form
     });
+    if (!res.ok) {
+      const d = await res.json();
+      throw new Error(`[${res.status}] ${d.error?.message || 'Upload Error'}`);
+    }
   }
 
   return payload;

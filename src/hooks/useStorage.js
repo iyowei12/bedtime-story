@@ -87,7 +87,9 @@ export function useStorage() {
       setDeletedIds(payload.deletedIds);
       localStorage.setItem('bts_deleted_v2', JSON.stringify(payload.deletedIds));
     } catch (e) {
-      if (e.message.includes('401')) {
+      // 偵測 401 Unauthorized 或 403 Forbidden
+      if (e.message.includes('[401]') || e.message.includes('[403]') || e.message.toLowerCase().includes('invalid authentication')) {
+        console.warn('Authentication expired or invalid, clearing token...');
         sessionStorage.removeItem('GD_TOKEN');
         setGToken(null);
       }
