@@ -6,6 +6,7 @@ const CK = 'bts_config_v2';
 
 export const DEFAULT_CFG = {
   childName: '',
+  configUpdatedAt: '',
   aiProvider: 'claude',
   aiKey: '',
   aiKeys: {
@@ -43,6 +44,10 @@ const normalizeCfg = (cfg) => {
     base.ttsKeys[cfg.ttsProvider] = cfg.ttsKey;
   }
 
+  if (!base.configUpdatedAt) {
+    base.configUpdatedAt = '';
+  }
+
   return base;
 };
 
@@ -62,9 +67,14 @@ export function useStorage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const saveCfg = (c) => {
-    const normalized = normalizeCfg(c);
+    const normalized = normalizeCfg({
+      ...c,
+      configUpdatedAt: new Date().toISOString()
+    });
     setCfgState(normalized);
     localStorage.setItem(CK, JSON.stringify(normalized));
+
+    if (gToken) handleDriveSync(false);
   };
 
   const saveStory = (text, lang) => {
@@ -111,8 +121,9 @@ export function useStorage() {
       // 避免 React 閉包陷阱，永遠從 localStorage 抓取按下同步那一瞬間的最真實資料
       const currentStories = JSON.parse(localStorage.getItem(SK) || '[]');
       const currentDeletedIds = JSON.parse(localStorage.getItem('bts_deleted_v2') || '[]');
+      const currentCfg = normalizeCfg(JSON.parse(localStorage.getItem(CK) || 'null') || DEFAULT_CFG);
       
-      const payload = await syncWithDrive(token, currentStories, currentDeletedIds);
+      const payload = await syncWithDrive(token, currentStories, currentDeletedIds, currentCfg);
       
       // 更新故事合輯
       setStoriesState(payload.stories);
@@ -121,6 +132,14 @@ export function useStorage() {
       // 更新雲端共同維護的死亡筆記本
       setDeletedIds(payload.deletedIds);
       localStorage.setItem('bts_deleted_v2', JSON.stringify(payload.deletedIds));
+
+      const mergedCfg = normalizeCfg({
+        ...currentCfg,
+        childName: payload.childName ?? currentCfg.childName,
+        configUpdatedAt: payload.configUpdatedAt ?? currentCfg.configUpdatedAt
+      });
+      setCfgState(mergedCfg);
+      localStorage.setItem(CK, JSON.stringify(mergedCfg));
     } catch (e) {
       // 偵測 401 Unauthorized 或 403 Forbidden
       if (e.message.includes('[401]') || e.message.includes('[403]') || e.message.toLowerCase().includes('invalid authentication')) {

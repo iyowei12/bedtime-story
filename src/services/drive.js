@@ -32,7 +32,7 @@ const findFile = async (token) => {
 };
 
 // 統步合併邏輯：上傳本地 + 下載雲端
-export const syncWithDrive = async (token, localStories, localDeletedIds = []) => {
+export const syncWithDrive = async (token, localStories, localDeletedIds = [], localCfg = {}) => {
   const file = await findFile(token);
   let cloudData = null;
   let fileId = file?.id;
@@ -49,6 +49,8 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = []) =
 
   let cloudStories = [];
   let cloudDeletedIds = [];
+  let cloudChildName = '';
+  let cloudConfigUpdatedAt = '';
   
   // 向下相容舊版陣列格式
   if (Array.isArray(cloudData)) {
@@ -56,6 +58,8 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = []) =
   } else if (cloudData && typeof cloudData === 'object') {
     cloudStories = cloudData.stories || [];
     cloudDeletedIds = cloudData.deletedIds || [];
+    cloudChildName = cloudData.childName || '';
+    cloudConfigUpdatedAt = cloudData.configUpdatedAt || '';
   }
 
   // 1. 合併「死亡筆記本」(已刪除 ID 列表)
@@ -75,10 +79,17 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = []) =
   // 依時間排序 (最新的在前面)
   mergedStories.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  const localConfigUpdatedAt = localCfg.configUpdatedAt || '';
+  const shouldUseCloudCfg = cloudConfigUpdatedAt && (!localConfigUpdatedAt || new Date(cloudConfigUpdatedAt) > new Date(localConfigUpdatedAt));
+  const mergedChildName = shouldUseCloudCfg ? cloudChildName : (localCfg.childName || '');
+  const mergedConfigUpdatedAt = shouldUseCloudCfg ? cloudConfigUpdatedAt : localConfigUpdatedAt;
+
   // 寫回雲端的新格式
   const payload = {
     stories: mergedStories,
-    deletedIds: mergedDeletedIds
+    deletedIds: mergedDeletedIds,
+    childName: mergedChildName,
+    configUpdatedAt: mergedConfigUpdatedAt
   };
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
   
