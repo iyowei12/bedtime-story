@@ -1,14 +1,22 @@
-import React, { useRef } from 'react';
+import React from 'react';
+
+const starAt = (i) => {
+  const seed = i + 1;
+  const frac = (n) => n - Math.floor(n);
+  const mix = (a, b) => frac(Math.sin(seed * a + b) * 10000);
+
+  return {
+    id: i,
+    top: mix(12.9898, 78.233) * 100,
+    left: mix(39.3467, 11.135) * 100,
+    size: mix(73.156, 52.235) * 2.4 + 0.4,
+    dur: mix(19.417, 23.871) * 3 + 2.2,
+    del: mix(61.271, 7.913) * 6,
+  };
+};
 
 export function Stars() {
-  const items = useRef(
-    Array.from({ length: 60 }, (_, i) => ({
-      id: i,
-      top: Math.random() * 100, left: Math.random() * 100,
-      size: Math.random() * 2.4 + .4,
-      dur: Math.random() * 3 + 2.2, del: Math.random() * 6,
-    }))
-  ).current;
+  const items = Array.from({ length: 60 }, (_, i) => starAt(i));
   
   return (
     <div className="star-layer">

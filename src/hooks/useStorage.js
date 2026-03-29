@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { requestDriveAccess, syncWithDrive } from '../services/drive';
 
 const SK = 'bts_stories_v2';
 const CK = 'bts_config_v2';
+const GT = 'GD_TOKEN';
+const GTE = 'GD_TOKEN_EXPIRES_AT';
 
 export const DEFAULT_CFG = {
   childName: '',
@@ -63,8 +65,33 @@ export function useStorage() {
   const [stories, setStoriesState] = useState(() => load(SK, []));
   const [deletedIds, setDeletedIds] = useState(() => load('bts_deleted_v2', []));
   const [cfg, setCfgState] = useState(() => normalizeCfg(load(CK, DEFAULT_CFG)));
-  const [gToken, setGToken] = useState(() => sessionStorage.getItem('GD_TOKEN') || null);
+  const [gToken, setGToken] = useState(() => sessionStorage.getItem(GT) || null);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const getStoredExpiry = useCallback(() => Number(sessionStorage.getItem(GTE) || '0'), []);
+  const isTokenFresh = useCallback(() => {
+    const expiresAt = getStoredExpiry();
+    return !!gToken && !!expiresAt && Date.now() < expiresAt - 60_000;
+  }, [gToken, getStoredExpiry]);
+  const clearDriveToken = useCallback(() => {
+    sessionStorage.removeItem(GT);
+    sessionStorage.removeItem(GTE);
+    setGToken(null);
+  }, []);
+  const persistDriveToken = useCallback(({ accessToken, expiresIn }) => {
+    const expiresAt = Date.now() + Math.max(0, expiresIn - 30) * 1000;
+    sessionStorage.setItem(GT, accessToken);
+    sessionStorage.setItem(GTE, String(expiresAt));
+    setGToken(accessToken);
+    return accessToken;
+  }, []);
+  const requestToken = useCallback((interactive) => new Promise((resolve, reject) => {
+    requestDriveAccess(
+      (tokenInfo) => resolve(persistDriveToken(tokenInfo)),
+      (err) => reject(err),
+      { prompt: interactive ? '' : 'none' }
+    );
+  }), [persistDriveToken]);
 
   const saveCfg = (c) => {
     const normalized = normalizeCfg({
@@ -99,23 +126,7 @@ export function useStorage() {
     if (gToken) handleDriveSync(false);
   };
 
-  const handleDriveSync = async (interactive = true) => {
-    if (!gToken && !interactive) return;
-
-    if (!gToken) {
-      return new Promise((resolve) => {
-        requestDriveAccess((token) => {
-          sessionStorage.setItem('GD_TOKEN', token);
-          setGToken(token);
-          doSync(token).then(resolve);
-        }, (err) => { alert('Google Auth Error: ' + err.message); resolve(); });
-      });
-    } else {
-      await doSync(gToken);
-    }
-  };
-
-  const doSync = async (token) => {
+  const doSync = useCallback(async (token) => {
     setIsSyncing(true);
     try {
       // 避免 React 閉包陷阱，永遠從 localStorage 抓取按下同步那一瞬間的最真實資料
@@ -144,19 +155,37 @@ export function useStorage() {
       // 偵測 401 Unauthorized 或 403 Forbidden
       if (e.message.includes('[401]') || e.message.includes('[403]') || e.message.toLowerCase().includes('invalid authentication')) {
         console.warn('Authentication expired or invalid, clearing token...');
-        sessionStorage.removeItem('GD_TOKEN');
-        setGToken(null);
+        clearDriveToken();
       }
       console.warn('Sync failed:', e);
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [clearDriveToken]);
+
+  const handleDriveSync = useCallback(async (interactive = true) => {
+    if (!interactive && !gToken) return;
+
+    try {
+      let token = gToken;
+      if (!isTokenFresh()) {
+        token = await requestToken(interactive);
+      }
+      if (!token) return;
+      await doSync(token);
+    } catch (err) {
+      if (!interactive) {
+        clearDriveToken();
+        return;
+      }
+      alert('Google Auth Error: ' + err.message);
+    }
+  }, [clearDriveToken, doSync, gToken, isTokenFresh, requestToken]);
 
   // 進入網頁如果有 token 就偷合同步
   useEffect(() => {
     if (gToken) handleDriveSync(false);
-  }, []);
+  }, [gToken, handleDriveSync]);
 
   return {
     stories, cfg, gToken, isSyncing,

@@ -3,17 +3,25 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const FILE_NAME = 'bedtime_stories_sync.json';
 
 // 要求與取得授權 Access Token
-export const requestDriveAccess = (onSuccess, onError) => {
+export const requestDriveAccess = (onSuccess, onError, options = {}) => {
   if (!window.google) return onError?.(new Error('Google Identity Services script not loaded.'));
   const client = window.google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
+    prompt: options.prompt ?? '',
     callback: (res) => {
       if (res.error) onError?.(new Error(res.error));
-      else onSuccess?.(res.access_token);
+      else onSuccess?.({
+        accessToken: res.access_token,
+        expiresIn: Number(res.expires_in || 0),
+        scope: res.scope || '',
+      });
     },
+    error_callback: (err) => onError?.(new Error(err.type || 'Google token request failed')),
   });
-  client.requestAccessToken();
+  client.requestAccessToken({
+    prompt: options.prompt ?? ''
+  });
 };
 
 const getHeaders = (token) => ({
