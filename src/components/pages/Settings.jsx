@@ -126,6 +126,21 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
               <strong style={{ color: '#e2b96f' }}>{t.browserVoices}</strong>
               <div>{t.browserVoicesHint}</div>
             </div>
+            <div style={{ marginBottom: 12 }}>
+              <span className="label">{t.browserVoiceSelect}</span>
+              <select
+                className="field"
+                value={v.browserVoice || ''}
+                onChange={e => setV({ ...v, browserVoice: e.target.value })}
+              >
+                <option value="">{t.browserVoiceAuto}</option>
+                {browserVoices.map((voice) => (
+                  <option key={`${voice.name}-${voice.lang}`} value={voice.name}>
+                    {voice.name} ({voice.lang})
+                  </option>
+                ))}
+              </select>
+            </div>
             <div style={{
               maxHeight: 220,
               overflowY: 'auto',

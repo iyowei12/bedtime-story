@@ -9,6 +9,7 @@ const GTE = 'GD_TOKEN_EXPIRES_AT';
 export const DEFAULT_CFG = {
   childName: '',
   configUpdatedAt: '',
+  browserVoice: '',
   aiProvider: 'claude',
   aiKey: '',
   aiKeys: {

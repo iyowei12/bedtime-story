@@ -9,8 +9,33 @@ export const playBlob = (url, audioRef, onEnd, setPlaying) => {
 
 const getTtsKey = (cfg, provider) => cfg.ttsKeys?.[provider]?.trim() || cfg.ttsKey?.trim() || '';
 const getOpenAIKey = (cfg) => cfg.aiKeys?.openai?.trim() || cfg.aiKey?.trim() || '';
+const findPreferredBrowserVoice = (voices, lang, configuredVoice) => {
+  if (!voices?.length) return null;
 
-export const playBrowser = ({ story, lang, onEnd, setPlaying }) => {
+  if (configuredVoice) {
+    const exact = voices.find((voice) => voice.name === configuredVoice);
+    if (exact) return exact;
+  }
+
+  if (lang === 'zh') {
+    const preferredNames = [
+      'Microsoft HanHan Online - Chinese (Taiwan)',
+      'Microsoft Hanhan - Chinese (Traditional, Taiwan)',
+      'Microsoft Yating - Chinese (Traditional, Taiwan)'
+    ];
+    for (const name of preferredNames) {
+      const match = voices.find((voice) => voice.name === name);
+      if (match) return match;
+    }
+  }
+
+  return voices.find((voice) => lang === 'zh'
+    ? voice.lang.startsWith('zh-TW') || voice.lang.startsWith('zh_TW')
+    : voice.lang.startsWith('en')
+  ) || null;
+};
+
+export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }) => {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(story);
@@ -18,7 +43,7 @@ export const playBrowser = ({ story, lang, onEnd, setPlaying }) => {
   u.rate = .83; u.pitch = 1.06;
   
   const vs = window.speechSynthesis.getVoices();
-  const pref = vs.find(x => lang === 'zh' ? x.lang.startsWith('zh-TW') || x.lang.startsWith('zh_TW') : x.lang.startsWith('en'));
+  const pref = findPreferredBrowserVoice(vs, lang, cfg?.browserVoice);
   if (pref) u.voice = pref;
   
   u.onend = onEnd;
