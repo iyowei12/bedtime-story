@@ -100,7 +100,11 @@ export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
     body: JSON.stringify({
       input: { text: story },
       voice: { languageCode: lang === 'zh' ? 'cmn-TW' : 'en-US', name: lang === 'zh' ? 'cmn-TW-Wavenet-A' : 'en-US-Neural2-F' },
-      audioConfig: { audioEncoding: 'MP3', speakingRate: .88 },
+      audioConfig: {
+        audioEncoding: 'MP3',
+        speakingRate: lang === 'zh' ? .82 : .86,
+        pitch: lang === 'zh' ? -1.6 : -0.8
+      },
     }),
   });
   const d = await r.json();
