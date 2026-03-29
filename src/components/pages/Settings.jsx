@@ -23,10 +23,34 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
   const aiObj = ai.find(x => x.k === v.aiProvider) || ai[0];
   const aiNote = aiObj.n;
   const aiUrl = t.urls[aiObj.k];
+  const activeAiKey = v.aiKeys?.[v.aiProvider] || '';
   
   const ttsObj = tts.find(x => x.k === v.ttsProvider) || tts[0];
   const ttsNote = ttsObj.n;
   const ttsUrl = t.urls[ttsObj.k];
+  const activeTtsKey = v.ttsKeys?.[v.ttsProvider] || '';
+
+  const updateAiKey = (value) => {
+    setV({
+      ...v,
+      aiKey: v.aiProvider === 'openai' ? value : v.aiKey,
+      aiKeys: {
+        ...(v.aiKeys || {}),
+        [v.aiProvider]: value
+      }
+    });
+  };
+
+  const updateTtsKey = (value) => {
+    setV({
+      ...v,
+      ttsKey: v.ttsProvider === 'browser' ? v.ttsKey : value,
+      ttsKeys: {
+        ...(v.ttsKeys || {}),
+        [v.ttsProvider]: value
+      }
+    });
+  };
   
   return (
     <div className="page" style={{ paddingTop: 38 }}>
@@ -50,7 +74,7 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
           {aiUrl && <a href={aiUrl} target="_blank" rel="noreferrer" style={{ color: '#e2b96f', marginLeft: 8, textDecoration: 'none', fontWeight: 700 }}>{lang === 'zh' ? '取得 API 🔑' : 'Get API 🔑'}</a>}
         </p>
         <div style={{ position: 'relative' }}>
-          <input className="field" type={showAi ? "text" : "password"} value={v.aiKey || ''} onChange={e => setV({ ...v, aiKey: e.target.value })} placeholder={t.keyPH} style={{ paddingRight: 40 }} />
+          <input className="field" type={showAi ? "text" : "password"} value={activeAiKey} onChange={e => updateAiKey(e.target.value)} placeholder={t.keyPH} style={{ paddingRight: 40 }} />
           <button onClick={() => setShowAi(!showAi)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.7 }}>
             {showAi ? '🙈' : '👁️'}
           </button>
@@ -68,7 +92,7 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
         </p>
         {v.ttsProvider !== 'browser' &&
           <div style={{ position: 'relative' }}>
-            <input className="field" type={showTts ? "text" : "password"} value={v.ttsKey || ''} onChange={e => setV({ ...v, ttsKey: e.target.value })} placeholder={t.keyPH} style={{ paddingRight: 40 }} />
+            <input className="field" type={showTts ? "text" : "password"} value={activeTtsKey} onChange={e => updateTtsKey(e.target.value)} placeholder={t.keyPH} style={{ paddingRight: 40 }} />
             <button onClick={() => setShowTts(!showTts)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.7 }}>
               {showTts ? '🙈' : '👁️'}
             </button>

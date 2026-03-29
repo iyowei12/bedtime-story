@@ -7,6 +7,9 @@ export const playBlob = (url, audioRef, onEnd, setPlaying) => {
   setPlaying(true);
 };
 
+const getTtsKey = (cfg, provider) => cfg.ttsKeys?.[provider]?.trim() || cfg.ttsKey?.trim() || '';
+const getOpenAIKey = (cfg) => cfg.aiKeys?.openai?.trim() || cfg.aiKey?.trim() || '';
+
 export const playBrowser = ({ story, lang, onEnd, setPlaying }) => {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
@@ -26,7 +29,7 @@ export const playBrowser = ({ story, lang, onEnd, setPlaying }) => {
 };
 
 export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
-  const k = cfg.ttsKey?.trim();
+  const k = getTtsKey(cfg, 'elevenlabs');
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 ElevenLabs API Key' : 'Please add ElevenLabs API Key in Settings');
     return;
@@ -72,7 +75,7 @@ export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPla
 };
 
 export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
-  const k = cfg.aiKey;
+  const k = getOpenAIKey(cfg);
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 OpenAI API Key' : 'Please add OpenAI API Key in Settings');
     return;
@@ -87,7 +90,7 @@ export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
 };
 
 export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
-  const k = cfg.ttsKey;
+  const k = getTtsKey(cfg, 'google');
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 Google Cloud TTS API Key' : 'Please add Google Cloud TTS API Key in Settings');
     return;

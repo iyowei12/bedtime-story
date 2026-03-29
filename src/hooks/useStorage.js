@@ -8,8 +8,42 @@ export const DEFAULT_CFG = {
   childName: '',
   aiProvider: 'claude',
   aiKey: '',
+  aiKeys: {
+    claude: '',
+    gemini: '',
+    openai: ''
+  },
   ttsProvider: 'browser',
-  ttsKey: ''
+  ttsKey: '',
+  ttsKeys: {
+    elevenlabs: '',
+    google: ''
+  }
+};
+
+const normalizeCfg = (cfg) => {
+  const base = {
+    ...DEFAULT_CFG,
+    ...cfg,
+    aiKeys: {
+      ...DEFAULT_CFG.aiKeys,
+      ...(cfg?.aiKeys || {})
+    },
+    ttsKeys: {
+      ...DEFAULT_CFG.ttsKeys,
+      ...(cfg?.ttsKeys || {})
+    }
+  };
+
+  if (cfg?.aiKey && cfg?.aiProvider && !base.aiKeys[cfg.aiProvider]) {
+    base.aiKeys[cfg.aiProvider] = cfg.aiKey;
+  }
+
+  if (cfg?.ttsKey && cfg?.ttsProvider && base.ttsProvider !== 'browser' && !base.ttsKeys[cfg.ttsProvider]) {
+    base.ttsKeys[cfg.ttsProvider] = cfg.ttsKey;
+  }
+
+  return base;
 };
 
 const load = (k, d) => {
@@ -23,13 +57,14 @@ const load = (k, d) => {
 export function useStorage() {
   const [stories, setStoriesState] = useState(() => load(SK, []));
   const [deletedIds, setDeletedIds] = useState(() => load('bts_deleted_v2', []));
-  const [cfg, setCfgState] = useState(() => load(CK, DEFAULT_CFG));
+  const [cfg, setCfgState] = useState(() => normalizeCfg(load(CK, DEFAULT_CFG)));
   const [gToken, setGToken] = useState(() => sessionStorage.getItem('GD_TOKEN') || null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const saveCfg = (c) => {
-    setCfgState(c);
-    localStorage.setItem(CK, JSON.stringify(c));
+    const normalized = normalizeCfg(c);
+    setCfgState(normalized);
+    localStorage.setItem(CK, JSON.stringify(normalized));
   };
 
   const saveStory = (text, lang) => {
