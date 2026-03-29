@@ -82,10 +82,37 @@ export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
   }
   const r = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${k}` },
-    body: JSON.stringify({ model: 'tts-1', input: story, voice: 'nova', speed: .88 }),
+    headers: {
+      'Accept': 'audio/mpeg',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${k}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini-tts',
+      input: story,
+      voice: lang === 'zh' ? 'shimmer' : 'nova',
+      instructions: lang === 'zh'
+        ? '請用溫柔、平靜、像睡前說故事阿姨的語氣朗讀。語速稍慢，停頓自然，句尾輕柔，帶有安撫感，不要像播報員。'
+        : 'Speak in a gentle, calm bedtime-story style. Read a little slowly, with natural pauses, soft sentence endings, and a soothing comforting tone. Avoid sounding like a news reader.',
+      response_format: 'mp3',
+      speed: lang === 'zh' ? .9 : .92
+    }),
   });
-  if (!r.ok) throw new Error(`OpenAI TTS: ${r.status}`);
+  if (!r.ok) {
+    let detail = '';
+    const contentType = r.headers.get('content-type') || '';
+    try {
+      if (contentType.includes('application/json')) {
+        const data = await r.json();
+        detail = data.error?.message || data.message || JSON.stringify(data);
+      } else {
+        detail = await r.text();
+      }
+    } catch {
+      detail = '';
+    }
+    throw new Error(`OpenAI TTS: ${r.status}${detail ? ` - ${detail}` : ''}`);
+  }
   playBlob(URL.createObjectURL(await r.blob()), audioRef, onEnd, setPlaying);
 };
 
