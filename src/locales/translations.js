@@ -18,6 +18,10 @@ export const T = {
     setTitle: '設定',
     cName: '主角名字', cPH: '例：小明、安安',
     aiProv: 'AI 模型', ttsProv: '語音朗讀',
+    browserVoices: '瀏覽器可用語音',
+    browserVoicesHint: '以下清單來自目前瀏覽器的 speechSynthesis。若你用 Edge，這裡通常就能看出是否有 Microsoft/Edge 的自然語音。',
+    browserVoicesEmpty: '目前還沒拿到語音清單，請稍等一下或重新整理頁面。',
+    browserVoiceDefault: '預設',
     keyPH: '貼上你的 API Key', saveSet: '✨ 儲存設定',
     notes: {
       claude: 'Anthropic Console API Key',
@@ -56,6 +60,10 @@ export const T = {
     setTitle: 'Settings',
     cName: "Hero's Name", cPH: 'e.g. Emma, Leo',
     aiProv: 'AI Provider', ttsProv: 'Text-to-Speech',
+    browserVoices: 'Available Browser Voices',
+    browserVoicesHint: 'This list comes from the current browser speechSynthesis API. In Edge, it can help you see whether Microsoft/Edge natural voices are available.',
+    browserVoicesEmpty: 'No voices have loaded yet. Please wait a moment or refresh the page.',
+    browserVoiceDefault: 'Default',
     keyPH: 'Paste your API Key here', saveSet: '✨ Save Settings',
     notes: {
       claude: 'Anthropic Console API Key',

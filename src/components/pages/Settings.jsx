@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { T } from '../../locales/translations';
 
 export function SettingsPage({ cfg, onSave, onBack, lang }) {
@@ -6,6 +6,7 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
   const [v, setV] = useState(cfg);
   const [showAi, setShowAi] = useState(false);
   const [showTts, setShowTts] = useState(false);
+  const [browserVoices, setBrowserVoices] = useState([]);
   
   const ai = [
     { k: 'claude', l: 'Claude (Anthropic)', n: t.notes.claude },
@@ -51,6 +52,27 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
       }
     });
   };
+
+  useEffect(() => {
+    if (!window.speechSynthesis) return;
+
+    const syncVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      setBrowserVoices([...voices].sort((a, b) => {
+        const langDiff = a.lang.localeCompare(b.lang);
+        return langDiff || a.name.localeCompare(b.name);
+      }));
+    };
+
+    syncVoices();
+    window.speechSynthesis.onvoiceschanged = syncVoices;
+
+    return () => {
+      if (window.speechSynthesis.onvoiceschanged === syncVoices) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
   
   return (
     <div className="page" style={{ paddingTop: 38 }}>
@@ -98,6 +120,42 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
             </button>
           </div>
         }
+        {v.ttsProvider === 'browser' && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 12, color: '#5a80b8', marginBottom: 10, lineHeight: 1.55 }}>
+              <strong style={{ color: '#e2b96f' }}>{t.browserVoices}</strong>
+              <div>{t.browserVoicesHint}</div>
+            </div>
+            <div style={{
+              maxHeight: 220,
+              overflowY: 'auto',
+              borderRadius: 16,
+              padding: 10,
+              background: 'rgba(10, 25, 48, 0.24)',
+              border: '1px solid rgba(226, 185, 111, 0.18)'
+            }}>
+              {browserVoices.length > 0 ? browserVoices.map((voice) => (
+                <div key={`${voice.name}-${voice.lang}`} style={{
+                  padding: '8px 10px',
+                  borderRadius: 12,
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  marginBottom: 8,
+                  color: '#eef4ff'
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>
+                    {voice.name}
+                    {voice.default && <span style={{ marginLeft: 8, color: '#e2b96f', fontSize: 12 }}>{t.browserVoiceDefault}</span>}
+                  </div>
+                  <div style={{ fontSize: 12, opacity: 0.75 }}>{voice.lang}</div>
+                </div>
+              )) : (
+                <div style={{ fontSize: 12, color: '#eef4ff', opacity: 0.72 }}>
+                  {t.browserVoicesEmpty}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <button className="btn-gold" onClick={() => onSave(v)}>{t.saveSet}</button>
