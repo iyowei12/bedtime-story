@@ -169,7 +169,11 @@ export function useStorage() {
     try {
       let token = gToken;
       if (!isTokenFresh()) {
-        token = await requestToken(interactive);
+        if (!interactive) {
+          clearDriveToken();
+          return;
+        }
+        token = await requestToken(true);
       }
       if (!token) return;
       await doSync(token);
