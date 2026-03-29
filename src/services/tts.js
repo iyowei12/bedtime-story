@@ -26,7 +26,7 @@ export const playBrowser = ({ story, lang, onEnd, setPlaying }) => {
 };
 
 export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
-  const k = cfg.ttsKey;
+  const k = cfg.ttsKey?.trim();
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 ElevenLabs API Key' : 'Please add ElevenLabs API Key in Settings');
     return;
@@ -34,10 +34,37 @@ export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPla
   const vid = lang === 'zh' ? 'pNInz6obpgDQGcFmaJgB' : 'EXAVITQu4vr4xnSDxMaL';
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'xi-api-key': k },
-    body: JSON.stringify({ text: story, model_id: 'eleven_multilingual_v2', voice_settings: { stability: .5, similarity_boost: .75 } }),
+    headers: {
+      'Accept': 'audio/mpeg',
+      'Content-Type': 'application/json',
+      'xi-api-key': k
+    },
+    body: JSON.stringify({
+      text: story,
+      model_id: 'eleven_multilingual_v2',
+      language_code: lang === 'zh' ? 'zh' : 'en',
+      output_format: 'mp3_44100_128',
+      voice_settings: {
+        stability: .5,
+        similarity_boost: .75
+      }
+    }),
   });
-  if (!r.ok) throw new Error(`ElevenLabs: ${r.status}`);
+  if (!r.ok) {
+    let detail = '';
+    const contentType = r.headers.get('content-type') || '';
+    try {
+      if (contentType.includes('application/json')) {
+        const data = await r.json();
+        detail = data.detail?.message || data.detail || data.message || JSON.stringify(data);
+      } else {
+        detail = await r.text();
+      }
+    } catch {
+      detail = '';
+    }
+    throw new Error(`ElevenLabs: ${r.status}${detail ? ` - ${detail}` : ''}`);
+  }
   playBlob(URL.createObjectURL(await r.blob()), audioRef, onEnd, setPlaying);
 };
 
