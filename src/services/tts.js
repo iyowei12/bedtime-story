@@ -31,7 +31,7 @@ export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPla
     alert(lang === 'zh' ? '請先在設定中填入 ElevenLabs API Key' : 'Please add ElevenLabs API Key in Settings');
     return;
   }
-  const vid = lang === 'zh' ? 'pNInz6obpgDQGcFmaJgB' : 'EXAVITQu4vr4xnSDxMaL';
+  const vid = lang === 'zh' ? 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL';
   const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
     method: 'POST',
     headers: {
@@ -45,8 +45,11 @@ export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPla
       language_code: lang === 'zh' ? 'zh' : 'en',
       output_format: 'mp3_44100_128',
       voice_settings: {
-        stability: .5,
-        similarity_boost: .75
+        stability: .34,
+        similarity_boost: .72,
+        style: .28,
+        speed: .9,
+        use_speaker_boost: true
       }
     }),
   });
