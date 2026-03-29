@@ -26,6 +26,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     navigator.clipboard.writeText(story).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      window.open('https://ttsmaker.com/zh-hk', '_blank', 'noopener,noreferrer');
     });
   };
 
