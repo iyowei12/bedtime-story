@@ -11,6 +11,10 @@ export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, l
   const [isPreviewingBgm, setIsPreviewingBgm] = useState(false);
 
   useEffect(() => {
+    setV(cfg);
+  }, [cfg]);
+
+  useEffect(() => {
     return () => {
       bgm.pause();
     };
