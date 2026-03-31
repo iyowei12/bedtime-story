@@ -17,12 +17,12 @@ export const DEFAULT_CFG = {
     gemini: '',
     openai: ''
   },
-  ttsProvider: 'browser',
+  ttsProvider: 'edge',
   ttsKey: '',
   ttsKeys: {
     elevenlabs: '',
     google: '',
-    edge: ''
+    edge: 'https://bedtime-story-tts.iyowei12.workers.dev/'
   }
 };
 
