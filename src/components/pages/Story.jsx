@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
-import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS } from '../../services/tts';
+import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS, stopBrowserTTS } from '../../services/tts';
 import { bgm } from '../../services/bgm';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
@@ -29,7 +29,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   }, [playing, cfg.bgmEnabled, cfg.bgmType, cfg.bgmVolume]);
 
   const stopAll = () => {
-    window.speechSynthesis?.cancel();
+    stopBrowserTTS();
     browserPaused.current = false;
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     setPlaying(false);
@@ -94,15 +94,32 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   };
 
   const handleRestart = () => { 
-    window.speechSynthesis?.cancel();
+    stopBrowserTTS();
     browserPaused.current = false;
+    
+    setDimmed(false); 
+
+    // 如果有雲端音軌，直接退回 0 秒重播
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.error);
+      setPlaying(true);
+      return;
     }
-    setPlaying(false);
-    setDimmed(false); 
-    setTimeout(handlePlay, 200); 
+    
+    // 如果是網頁內建語音，直接重新發送整個長文句子去朗讀
+    if (cfg.ttsProvider === 'browser') {
+      setPlaying(true);
+      const args = { story, lang, cfg, audioRef, onEnd, setPlaying };
+      playBrowser(args);
+      return;
+    }
+
+    // 防連點：如果還沒播放過就按重新開始
+    if (!playing && !loadingTTS) {
+      handlePlay();
+    }
   };
   useEffect(() => () => { stopAll(); bgm.stop(); }, []);
 

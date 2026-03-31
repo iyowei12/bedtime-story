@@ -35,10 +35,24 @@ const findPreferredBrowserVoice = (voices, lang, configuredVoice) => {
   ) || null;
 };
 
+let activeBrowserUtterance = null;
+
+export const stopBrowserTTS = () => {
+  if (activeBrowserUtterance) {
+    activeBrowserUtterance.onend = null;
+    activeBrowserUtterance.onerror = null;
+    activeBrowserUtterance = null;
+  }
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+};
+
 export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }) => {
   if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  stopBrowserTTS();
   const u = new SpeechSynthesisUtterance(story);
+  activeBrowserUtterance = u;
   u.lang = lang === 'zh' ? 'zh-TW' : 'en-US';
   u.rate = .83; u.pitch = 1.06;
   
