@@ -8,6 +8,7 @@ const GTE = 'GD_TOKEN_EXPIRES_AT';
 
 export const DEFAULT_CFG = {
   childName: '',
+  childNameEn: '',
   configUpdatedAt: '',
   browserVoice: '',
   bgmEnabled: true,
@@ -151,6 +152,7 @@ export function useStorage() {
       const mergedCfg = normalizeCfg({
         ...currentCfg,
         childName: payload.childName ?? currentCfg.childName,
+        childNameEn: payload.childNameEn ?? currentCfg.childNameEn,
         bgmEnabled: payload.bgmEnabled ?? currentCfg.bgmEnabled,
         bgmType: payload.bgmType ?? currentCfg.bgmType,
         bgmVolume: payload.bgmVolume ?? currentCfg.bgmVolume,

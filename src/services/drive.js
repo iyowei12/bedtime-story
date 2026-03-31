@@ -58,6 +58,7 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
   let cloudStories = [];
   let cloudDeletedIds = [];
   let cloudChildName = '';
+  let cloudChildNameEn = '';
   let cloudConfigUpdatedAt = '';
   
   // 向下相容舊版陣列格式
@@ -67,6 +68,7 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     cloudStories = cloudData.stories || [];
     cloudDeletedIds = cloudData.deletedIds || [];
     cloudChildName = cloudData.childName || '';
+    cloudChildNameEn = cloudData.childNameEn || '';
     cloudConfigUpdatedAt = cloudData.configUpdatedAt || '';
   }
 
@@ -93,6 +95,10 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
   const mergedChildName = shouldUseCloudCfg 
     ? (cloudChildName || localCfg.childName || '') 
     : (localCfg.childName || cloudChildName || '');
+
+  const mergedChildNameEn = shouldUseCloudCfg 
+    ? (cloudChildNameEn || localCfg.childNameEn || '') 
+    : (localCfg.childNameEn || cloudChildNameEn || '');
     
   const mergedConfigUpdatedAt = shouldUseCloudCfg ? cloudConfigUpdatedAt : localConfigUpdatedAt;
 
@@ -101,6 +107,7 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     stories: mergedStories,
     deletedIds: mergedDeletedIds,
     childName: mergedChildName,
+    childNameEn: mergedChildNameEn,
     bgmEnabled: shouldUseCloudCfg ? (cloudData.bgmEnabled ?? localCfg.bgmEnabled) : (localCfg.bgmEnabled ?? cloudData.bgmEnabled),
     bgmType: shouldUseCloudCfg ? (cloudData.bgmType || localCfg.bgmType) : (localCfg.bgmType || cloudData.bgmType),
     bgmVolume: shouldUseCloudCfg ? (cloudData.bgmVolume ?? localCfg.bgmVolume) : (localCfg.bgmVolume ?? cloudData.bgmVolume),

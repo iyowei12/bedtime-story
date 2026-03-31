@@ -12,6 +12,8 @@ export function HomePage({
   const t = T[lang];
   const camRef = useRef();
   const galRef = useRef();
+  
+  const displayHero = lang === 'zh' ? cfg.childName : (cfg.childNameEn || cfg.childName);
 
   const onFile = (e) => {
     const f = e.target.files?.[0];
@@ -102,9 +104,9 @@ export function HomePage({
 
       <button className="btn-gold" disabled={!img} onClick={onGenerate}>{t.generate}</button>
 
-      {cfg.childName && (
+      {displayHero && (
         <p style={{ textAlign: 'center', fontSize: 13, color: '#5a80b8', marginTop: 11, fontWeight: 600 }}>
-          {t.heroHint(cfg.childName)}
+          {t.heroHint(displayHero)}
         </p>
       )}
     </div>

@@ -1,10 +1,10 @@
 export async function generateStory({ img, len, cfg, lang }) {
   const wc = { 1: 120, 3: 370, 5: 600 }[len];
-  const hero = cfg.childName || (lang === 'zh' ? '小寶' : 'Buddy');
+  const hero = lang === 'zh' ? (cfg.childName || '小寶') : (cfg.childNameEn || 'Buddy');
   const getAiKey = (provider) => cfg.aiKeys?.[provider]?.trim() || cfg.aiKey?.trim() || '';
   const prompt = lang === 'zh'
     ? `你是溫柔的說故事阿姨。根據這張故事書圖片，為3至5歲幼兒創作一個睡前故事。主角名字是「${hero}」，約${wc}個中文字。請使用短句子和簡單詞彙，讓故事溫馨有趣。結尾讓小朋友感到平靜、想睡覺。請直接開始說故事，不要有標題或前言。`
-    : `You are a gentle storyteller. Based on this storybook image, write a bedtime story for children aged 3–5. The main character is named "${hero}". About ${wc} words. Use short sentences and simple vocabulary. Make it warm and imaginative. End calmly so the child feels sleepy. Begin the story directly — no title or preamble.`;
+    : `You are a gentle storyteller. Based on this storybook image, write a bedtime story for children aged 3–5. The main character is named "${hero}". About ${wc} words. Use short sentences and simple vocabulary. Make it warm and imaginative. End calmly so the child feels sleepy. Begin the story directly — no title or preamble. IMPORTANT: The entire story MUST be written in English.`;
   
   const b64 = img.split(',')[1];
   const mime = img.split(';')[0].split(':')[1] || 'image/jpeg';

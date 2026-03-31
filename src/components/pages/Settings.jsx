@@ -109,8 +109,14 @@ export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, l
       </div>
 
       <div className="card" style={{ padding: 18, marginBottom: 13 }}>
-        <span className="label">👶 {t.cName}</span>
-        <input className="field" value={v.childName || ''} onChange={e => setV({ ...v, childName: e.target.value })} placeholder={t.cPH} />
+        <div style={{ marginBottom: 12 }}>
+          <span className="label">👶 {t.cName}</span>
+          <input className="field" value={v.childName || ''} onChange={e => setV({ ...v, childName: e.target.value })} placeholder={t.cPH} />
+        </div>
+        <div>
+          <span className="label">🦄 {t.cNameEn}</span>
+          <input className="field" value={v.childNameEn || ''} onChange={e => setV({ ...v, childNameEn: e.target.value })} placeholder={t.cNameEnPH} />
+        </div>
       </div>
 
       <div className="card" style={{ padding: 18, marginBottom: 13 }}>
