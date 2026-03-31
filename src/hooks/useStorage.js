@@ -21,7 +21,8 @@ export const DEFAULT_CFG = {
   ttsKey: '',
   ttsKeys: {
     elevenlabs: '',
-    google: ''
+    google: '',
+    edge: ''
   }
 };
 

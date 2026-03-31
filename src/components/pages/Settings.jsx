@@ -19,6 +19,7 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
     { k: 'elevenlabs', l: 'ElevenLabs', n: t.notes.elevenlabs },
     { k: 'openai', l: 'OpenAI TTS', n: t.notes.openaiTts },
     { k: 'google', l: 'Google Cloud TTS', n: t.notes.google },
+    { k: 'edge', l: 'Edge (Cloudflare Workers)', n: t.notes.edge },
   ];
   
   const aiObj = ai.find(x => x.k === v.aiProvider) || ai[0];
@@ -114,10 +115,12 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
         </p>
         {v.ttsProvider !== 'browser' &&
           <div style={{ position: 'relative' }}>
-            <input className="field" type={showTts ? "text" : "password"} value={activeTtsKey} onChange={e => updateTtsKey(e.target.value)} placeholder={t.keyPH} style={{ paddingRight: 40 }} />
-            <button onClick={() => setShowTts(!showTts)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.7 }}>
-              {showTts ? '🙈' : '👁️'}
-            </button>
+            <input className="field" type={showTts || v.ttsProvider === 'edge' ? "text" : "password"} value={activeTtsKey} onChange={e => updateTtsKey(e.target.value)} placeholder={v.ttsProvider === 'edge' ? 'https://...' : t.keyPH} style={{ paddingRight: 40 }} />
+            {v.ttsProvider !== 'edge' && (
+              <button onClick={() => setShowTts(!showTts)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.7 }}>
+                {showTts ? '🙈' : '👁️'}
+              </button>
+            )}
           </div>
         }
         {v.ttsProvider === 'browser' && (
