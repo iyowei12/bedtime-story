@@ -11,6 +11,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(isAlreadySaved);
   const audioRef = useRef(null);
+  const browserPaused = useRef(false);
 
   useEffect(() => {
     setSaved(isAlreadySaved);
@@ -18,6 +19,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
 
   const stopAll = () => {
     window.speechSynthesis?.cancel();
+    browserPaused.current = false;
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     setPlaying(false);
   };
@@ -30,27 +32,34 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     });
   };
 
-  const onEnd = () => { setPlaying(false); setDimmed(true); };
+  const onEnd = () => { 
+    setPlaying(false); 
+    setDimmed(true); 
+    browserPaused.current = false;
+  };
 
   const handlePlay = async () => {
     // 若正在播放，則暫停（保留記憶體中的音檔）
     if (playing) { 
       if (audioRef.current) audioRef.current.pause();
-      if (window.speechSynthesis) window.speechSynthesis.pause();
+      if (cfg.ttsProvider === 'browser' && window.speechSynthesis) {
+        window.speechSynthesis.pause();
+        browserPaused.current = true;
+      }
       setPlaying(false);
       return; 
     }
     // 防連點
     if (loadingTTS) return;
 
-    // 若音檔已存在但處於暫停狀態，則直接繼續播放（完全不重新消耗配額）
     if (audioRef.current) {
       audioRef.current.play();
       setPlaying(true);
       return;
     }
-    if (window.speechSynthesis && window.speechSynthesis.paused) {
+    if (cfg.ttsProvider === 'browser' && browserPaused.current && window.speechSynthesis) {
       window.speechSynthesis.resume();
+      browserPaused.current = false;
       setPlaying(true);
       return;
     }
