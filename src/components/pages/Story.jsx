@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
-import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS, playEdgeTTS } from '../../services/tts';
+import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS } from '../../services/tts';
 
 export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, onNew }) {
   const t = T[lang];
@@ -63,7 +63,6 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
         case 'elevenlabs': await playElevenLabs(args); break;
         case 'openai': await playOpenAITTS(args); break;
         case 'google': await playGoogleTTS(args); break;
-        case 'edge': await playEdgeTTS(args); break;
         default: playBrowser(args);
       }
     } catch (e) {

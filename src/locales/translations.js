@@ -33,7 +33,6 @@ export const T = {
       elevenlabs: 'ElevenLabs API Key（免費方案每月 10 分鐘）',
       openaiTts: '使用 OpenAI 的同一組 API Key',
       google: 'Google Cloud TTS API Key（每月 100 萬字元免費）',
-      edge: '填寫你自己部署的 Cloudflare Worker 網址（免費無限制）',
     },
     urls: {
       claude: 'https://console.anthropic.com/settings/keys',
@@ -42,7 +41,6 @@ export const T = {
       elevenlabs: 'https://elevenlabs.io/',
       openaiTts: 'https://platform.openai.com/api-keys',
       google: 'https://console.cloud.google.com/apis/library/texttospeech.googleapis.com',
-      edge: '',
     },
   },
   en: {
@@ -79,7 +77,6 @@ export const T = {
       elevenlabs: 'ElevenLabs API Key (10 min/month free)',
       openaiTts: 'Uses your same OpenAI API Key',
       google: 'Google Cloud TTS API Key (1M chars/month free)',
-      edge: 'Enter your custom Cloudflare Worker URL (Free & unlimited)',
     },
     urls: {
       claude: 'https://console.anthropic.com/settings/keys',
@@ -88,7 +85,6 @@ export const T = {
       elevenlabs: 'https://elevenlabs.io/',
       openaiTts: 'https://platform.openai.com/api-keys',
       google: 'https://console.cloud.google.com/apis/library/texttospeech.googleapis.com',
-      edge: '',
     },
   },
 };

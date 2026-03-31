@@ -164,26 +164,3 @@ export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
   playBlob(`data:audio/mp3;base64,${d.audioContent}`, audioRef, onEnd, setPlaying);
 };
 
-export const playEdgeTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
-  const url = getTtsKey(cfg, 'edge');
-  if (!url || !url.startsWith('http')) {
-    alert(lang === 'zh' ? '請先在設定頁面填寫正確的 Cloudflare Worker 網址 (https://...)' : 'Please enter a valid Cloudflare Worker URL in settings.');
-    return;
-  }
-  // 中文使用曉晨（活潑），英文使用 Aria（平靜）
-  const voice = lang === 'zh' ? 'zh-TW-HsiaoChenNeural' : 'en-US-AriaNeural';
-  
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: story, voice })
-  });
-
-  if (!r.ok) {
-    let detail = await r.text().catch(() => '');
-    throw new Error(`Edge TTS Server Error: ${r.status} ${detail}`);
-  }
-  
-  playBlob(URL.createObjectURL(await r.blob()), audioRef, onEnd, setPlaying);
-};
-
