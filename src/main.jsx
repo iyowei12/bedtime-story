@@ -11,7 +11,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => {
+    // import.meta.env.BASE_URL is auto-injected by Vite
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(err => {
       console.log('SW registration failed: ', err);
     });
   });

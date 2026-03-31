@@ -102,16 +102,7 @@ export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, l
         <h2 style={{ fontSize: 20, fontWeight: 800, color: '#e2b96f' }}>{t.setTitle}</h2>
       </div>
 
-      {deferredPrompt && (
-        <div className="card" style={{ padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(130deg, rgba(80, 216, 144, 0.15), rgba(40, 160, 224, 0.15))', border: '1px solid rgba(111, 207, 151, 0.4)' }}>
-          <div style={{ fontSize: 13, color: '#eef4ff', fontWeight: 600 }}>
-            {t.installApp}
-          </div>
-          <button className="btn-gold" style={{ margin: 0, padding: '6px 14px', fontSize: 13 }} onClick={handleInstallClick}>
-            {lang === 'zh' ? '安裝' : 'Install'}
-          </button>
-        </div>
-      )}
+
 
       <div className="card" style={{ padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 13, color: '#a8b8d5' }}>
@@ -264,6 +255,17 @@ export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, l
           </div>
         )}
       </div>
+
+      {deferredPrompt && (
+        <div className="card" style={{ padding: '14px 18px', marginBottom: 26, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 13, color: '#eef4ff', fontWeight: 600 }}>
+            {t.installApp}
+          </div>
+          <button className="btn-ghost-sm" style={{ margin: 0, color: '#e2b96f', border: '1px solid rgba(226, 185, 111, 0.4)' }} onClick={handleInstallClick}>
+            {lang === 'zh' ? '安裝' : 'Install'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
