@@ -85,7 +85,7 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
   return (
     <div className="page" style={{ paddingTop: 38 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-        <button className="btn-ghost" onClick={onBack}>{t.back}</button>
+        <button className="btn-ghost" onClick={() => onSave(v)}>{t.back}</button>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: '#e2b96f' }}>{t.setTitle}</h2>
       </div>
 
@@ -219,8 +219,6 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
           </div>
         )}
       </div>
-
-      <button className="btn-gold" onClick={() => onSave(v)}>{t.saveSet}</button>
     </div>
   );
 }
