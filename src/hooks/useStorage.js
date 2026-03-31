@@ -10,6 +10,9 @@ export const DEFAULT_CFG = {
   childName: '',
   configUpdatedAt: '',
   browserVoice: '',
+  bgmEnabled: true,
+  bgmType: 'musicbox',
+  bgmVolume: 0.15,
   aiProvider: 'claude',
   aiKey: '',
   aiKeys: {

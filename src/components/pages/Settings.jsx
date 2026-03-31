@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { T } from '../../locales/translations';
+import { bgm } from '../../services/bgm';
 
 export function SettingsPage({ cfg, onSave, onBack, lang }) {
   const t = T[lang];
@@ -7,6 +8,13 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
   const [showAi, setShowAi] = useState(false);
   const [showTts, setShowTts] = useState(false);
   const [browserVoices, setBrowserVoices] = useState([]);
+  const [isPreviewingBgm, setIsPreviewingBgm] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      bgm.pause();
+    };
+  }, []);
   
   const ai = [
     { k: 'claude', l: 'Claude (Anthropic)', n: t.notes.claude },
@@ -87,7 +95,46 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
       </div>
 
       <div className="card" style={{ padding: 18, marginBottom: 13 }}>
+        <span className="label">🎵 {t.bgmTitle}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 14, color: '#eef4ff' }}>{t.bgmEnabled}</span>
+          <input type="checkbox" checked={v.bgmEnabled !== false} onChange={e => setV({ ...v, bgmEnabled: e.target.checked })} style={{ width: 18, height: 18, accentColor: '#e2b96f' }} />
+        </div>
+        {v.bgmEnabled !== false && (
+          <>
+            <select className="field" value={v.bgmType || 'musicbox'} onChange={e => { setV({ ...v, bgmType: e.target.value }); if (isPreviewingBgm) bgm.play(e.target.value, v.bgmVolume ?? 0.15); }} style={{ marginBottom: 12 }}>
+              {Object.entries(t.bgmTypes).map(([k, label]) => (
+                <option key={k} value={k}>{label}</option>
+              ))}
+            </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 13, color: '#5a80b8', width: 40, whiteSpace: 'nowrap' }}>{t.bgmVolume}</span>
+              <input type="range" min="0.05" max="0.5" step="0.05" value={v.bgmVolume ?? 0.15} onChange={e => { setV({ ...v, bgmVolume: parseFloat(e.target.value) }); if (isPreviewingBgm) bgm.play(v.bgmType || 'musicbox', parseFloat(e.target.value)); }} style={{ flex: 1, accentColor: '#e2b96f' }} />
+            </div>
+            <div style={{ marginTop: 12, display: 'flex' }}>
+              <button 
+                className="btn-ghost" 
+                style={{ flex: 1, padding: '10px', fontSize: 13 }}
+                onClick={() => {
+                  if (isPreviewingBgm) {
+                    bgm.pause();
+                    setIsPreviewingBgm(false);
+                  } else {
+                    bgm.play(v.bgmType || 'musicbox', v.bgmVolume ?? 0.15);
+                    setIsPreviewingBgm(true);
+                  }
+                }}
+              >
+                {isPreviewingBgm ? t.bgmStop : t.bgmPreview}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="card" style={{ padding: 18, marginBottom: 13 }}>
         <span className="label">🤖 {t.aiProv}</span>
+
         <select className="field" value={v.aiProvider} onChange={e => setV({ ...v, aiProvider: e.target.value })} style={{ marginBottom: 10 }}>
           {ai.map(o => <option key={o.k} value={o.k}>{o.l}</option>)}
         </select>

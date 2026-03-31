@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
 import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS } from '../../services/tts';
+import { bgm } from '../../services/bgm';
 
 export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, onNew }) {
   const t = T[lang];
@@ -16,6 +17,14 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   useEffect(() => {
     setSaved(isAlreadySaved);
   }, [isAlreadySaved, story]);
+
+  useEffect(() => {
+    if (playing && cfg.bgmEnabled !== false) {
+      bgm.play(cfg.bgmType || 'musicbox', cfg.bgmVolume ?? 0.15);
+    } else {
+      bgm.pause();
+    }
+  }, [playing, cfg.bgmEnabled, cfg.bgmType, cfg.bgmVolume]);
 
   const stopAll = () => {
     window.speechSynthesis?.cancel();
@@ -83,7 +92,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   };
 
   const handleRestart = () => { stopAll(); setDimmed(false); setTimeout(handlePlay, 200); };
-  useEffect(() => () => stopAll(), []);
+  useEffect(() => () => { stopAll(); bgm.stop(); }, []);
 
   return (
     <>

@@ -42,6 +42,15 @@ export const T = {
       openaiTts: 'https://platform.openai.com/api-keys',
       google: 'https://console.cloud.google.com/apis/library/texttospeech.googleapis.com',
     },
+    bgmTitle: '背景音樂 (朗讀時)',
+    bgmEnabled: '啟用音樂',
+    bgmVolume: '音量',
+    bgmPreview: '▶ 試聽',
+    bgmStop: '⏸ 停止',
+    bgmTypes: {
+      musicbox: '輕柔音樂盒',
+      lullaby: '鋼琴搖籃曲',
+    },
   },
   en: {
     appTitle: 'Bedtime Stories', appSub: 'Turn any storybook into a bedtime tale',
@@ -85,6 +94,15 @@ export const T = {
       elevenlabs: 'https://elevenlabs.io/',
       openaiTts: 'https://platform.openai.com/api-keys',
       google: 'https://console.cloud.google.com/apis/library/texttospeech.googleapis.com',
+    },
+    bgmTitle: 'Background Music (During TTS)',
+    bgmEnabled: 'Enable Music',
+    bgmVolume: 'Volume',
+    bgmPreview: '▶ Preview',
+    bgmStop: '⏸ Stop',
+    bgmTypes: {
+      musicbox: 'Gentle Music Box',
+      lullaby: 'Piano Lullaby',
     },
   },
 };
