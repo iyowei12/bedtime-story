@@ -2,8 +2,8 @@ class BGMService {
   constructor() {
     this.audio = null;
     this.tracks = {
-      lullaby: '/bgm/lullaby.m4a',
-      musicbox: '/bgm/musicbox.m4a'
+      lullaby: import.meta.env.BASE_URL + 'bgm/lullaby.m4a',
+      musicbox: import.meta.env.BASE_URL + 'bgm/musicbox.m4a'
     };
     this.currentType = null;
   }
