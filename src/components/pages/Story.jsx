@@ -3,6 +3,7 @@ import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
 import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS } from '../../services/tts';
 import { bgm } from '../../services/bgm';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, onNew }) {
   const t = T[lang];
@@ -10,6 +11,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   const [loadingTTS, setLoadingTTS] = useState(false);
   const [dimmed, setDimmed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showTTSModal, setShowTTSModal] = useState(false);
   const [saved, setSaved] = useState(isAlreadySaved);
   const audioRef = useRef(null);
   const browserPaused = useRef(false);
@@ -37,7 +39,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     navigator.clipboard.writeText(story).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      window.open('https://ttsmaker.com/zh-hk', '_blank', 'noopener,noreferrer');
+      setShowTTSModal(true);
     });
   };
 
@@ -128,6 +130,19 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
           </div>
         </div>
       </div>
+
+      <ConfirmModal 
+        visible={showTTSModal}
+        title={lang === 'zh' ? '✅ 複製成功' : '✅ Copied Successfully'}
+        content={t.confirmTTS}
+        cancelText={lang === 'zh' ? '稍後再說' : 'Later'}
+        confirmText={lang === 'zh' ? '前往 TTSMaker' : 'Go to TTSMaker'}
+        onCancel={() => setShowTTSModal(false)}
+        onConfirm={() => {
+          setShowTTSModal(false);
+          window.open('https://ttsmaker.com/zh-hk', '_blank', 'noopener,noreferrer');
+        }}
+      />
     </>
   );
 }
