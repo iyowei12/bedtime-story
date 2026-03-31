@@ -89,7 +89,11 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
 
   const localConfigUpdatedAt = localCfg.configUpdatedAt || '';
   const shouldUseCloudCfg = cloudConfigUpdatedAt && (!localConfigUpdatedAt || new Date(cloudConfigUpdatedAt) > new Date(localConfigUpdatedAt));
-  const mergedChildName = shouldUseCloudCfg ? cloudChildName : (localCfg.childName || '');
+  
+  const mergedChildName = shouldUseCloudCfg 
+    ? (cloudChildName || localCfg.childName || '') 
+    : (localCfg.childName || cloudChildName || '');
+    
   const mergedConfigUpdatedAt = shouldUseCloudCfg ? cloudConfigUpdatedAt : localConfigUpdatedAt;
 
   // 寫回雲端的新格式
@@ -97,6 +101,9 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     stories: mergedStories,
     deletedIds: mergedDeletedIds,
     childName: mergedChildName,
+    bgmEnabled: shouldUseCloudCfg ? (cloudData.bgmEnabled ?? localCfg.bgmEnabled) : (localCfg.bgmEnabled ?? cloudData.bgmEnabled),
+    bgmType: shouldUseCloudCfg ? (cloudData.bgmType || localCfg.bgmType) : (localCfg.bgmType || cloudData.bgmType),
+    bgmVolume: shouldUseCloudCfg ? (cloudData.bgmVolume ?? localCfg.bgmVolume) : (localCfg.bgmVolume ?? cloudData.bgmVolume),
     configUpdatedAt: mergedConfigUpdatedAt
   };
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });

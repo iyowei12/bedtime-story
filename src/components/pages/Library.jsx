@@ -2,7 +2,7 @@ import React from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
 
-export function LibraryPage({ stories, gToken, isSyncing, onSync, onSelect, onDelete, onBack, lang }) {
+export function LibraryPage({ stories, onSelect, onDelete, onBack, lang }) {
   const t = T[lang];
   return (
     <div className="page" style={{ paddingTop: 38 }}>
@@ -12,21 +12,6 @@ export function LibraryPage({ stories, gToken, isSyncing, onSync, onSelect, onDe
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#7a90b8', background: 'rgba(255,255,255,.08)', padding: '3px 11px', borderRadius: 20, fontWeight: 700 }}>
           {stories.length}
         </span>
-      </div>
-
-      <div className="card" style={{ padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 13, color: '#a8b8d5' }}>
-          ☁️ {lang === 'zh' ? 'Google 雲端備份' : 'Google Drive Sync'}
-        </div>
-        {!gToken ? (
-          <button className="btn-ghost-sm" style={{ margin: 0 }} onClick={() => onSync(true)}>
-            {lang === 'zh' ? '授權登入' : 'Login'}
-          </button>
-        ) : (
-          <button className="btn-ghost-sm" style={{ margin: 0, color: isSyncing ? '#e2b96f' : '#6fcf97' }} disabled={isSyncing} onClick={() => onSync(true)}>
-            {isSyncing ? (lang === 'zh' ? '🔄 同步中...' : 'Syncing...') : (lang === 'zh' ? '✅ 已連線 (按我同步)' : '✅ Synced')}
-          </button>
-        )}
       </div>
 
       {stories.length === 0 ? (

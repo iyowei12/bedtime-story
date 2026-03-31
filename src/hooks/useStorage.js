@@ -151,6 +151,9 @@ export function useStorage() {
       const mergedCfg = normalizeCfg({
         ...currentCfg,
         childName: payload.childName ?? currentCfg.childName,
+        bgmEnabled: payload.bgmEnabled ?? currentCfg.bgmEnabled,
+        bgmType: payload.bgmType ?? currentCfg.bgmType,
+        bgmVolume: payload.bgmVolume ?? currentCfg.bgmVolume,
         configUpdatedAt: payload.configUpdatedAt ?? currentCfg.configUpdatedAt
       });
       setCfgState(mergedCfg);

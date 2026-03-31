@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { T } from '../../locales/translations';
 import { bgm } from '../../services/bgm';
 
-export function SettingsPage({ cfg, onSave, onBack, lang }) {
+export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, lang }) {
   const t = T[lang];
   const [v, setV] = useState(cfg);
   const [showAi, setShowAi] = useState(false);
@@ -84,9 +84,24 @@ export function SettingsPage({ cfg, onSave, onBack, lang }) {
   
   return (
     <div className="page" style={{ paddingTop: 38 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <button className="btn-ghost" onClick={() => onSave(v)}>{t.back}</button>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: '#e2b96f' }}>{t.setTitle}</h2>
+      </div>
+
+      <div className="card" style={{ padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 13, color: '#a8b8d5' }}>
+          ☁️ {lang === 'zh' ? 'Google 雲端備份' : 'Google Drive Sync'}
+        </div>
+        {!gToken ? (
+          <button className="btn-ghost-sm" style={{ margin: 0 }} onClick={() => onSync(true)}>
+            {lang === 'zh' ? '授權登入' : 'Login'}
+          </button>
+        ) : (
+          <button className="btn-ghost-sm" style={{ margin: 0, color: isSyncing ? '#e2b96f' : '#6fcf97' }} disabled={isSyncing} onClick={() => onSync(true)}>
+            {isSyncing ? (lang === 'zh' ? '🔄 同步中...' : 'Syncing...') : (lang === 'zh' ? '✅ 已連線 (立刻同步)' : '✅ Synced (Sync now)')}
+          </button>
+        )}
       </div>
 
       <div className="card" style={{ padding: 18, marginBottom: 13 }}>

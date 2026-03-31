@@ -93,7 +93,17 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     }
   };
 
-  const handleRestart = () => { stopAll(); setDimmed(false); setTimeout(handlePlay, 200); };
+  const handleRestart = () => { 
+    window.speechSynthesis?.cancel();
+    browserPaused.current = false;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setPlaying(false);
+    setDimmed(false); 
+    setTimeout(handlePlay, 200); 
+  };
   useEffect(() => () => { stopAll(); bgm.stop(); }, []);
 
   return (

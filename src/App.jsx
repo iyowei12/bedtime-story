@@ -50,7 +50,10 @@ export default function App() {
     <div className="page-bg"><Stars />{children}</div>
   );
 
-  if (page === 'settings') return wrap(<SettingsPage cfg={cfg} onSave={handleSaveCfg} onBack={() => setPage('home')} lang={lang} />);
+  if (page === 'settings') return wrap(
+    <SettingsPage cfg={cfg} onSave={handleSaveCfg} onBack={() => setPage('home')} 
+      gToken={gToken} isSyncing={isSyncing} onSync={handleDriveSync} lang={lang} />
+  );
   if (page === 'loading') return wrap(<LoadingPage lang={lang} />);
   if (page === 'story') return wrap(
     <StoryPage story={story} lang={lang} cfg={cfg}
@@ -60,7 +63,6 @@ export default function App() {
   );
   if (page === 'library') return wrap(
     <LibraryPage stories={stories}
-      gToken={gToken} isSyncing={isSyncing} onSync={handleDriveSync}
       onSelect={txt => { setStory(txt); setPage('story'); }}
       onDelete={delStory} onBack={() => setPage('home')} lang={lang} />
   );
