@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { T } from '../../locales/translations';
 import { bgm } from '../../services/bgm';
 
-export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, lang }) {
+export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, lang, deferredPrompt, setDeferredPrompt }) {
   const t = T[lang];
   const [v, setV] = useState(cfg);
   const [showAi, setShowAi] = useState(false);
@@ -20,6 +20,15 @@ export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, l
     };
   }, []);
   
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
+
   const ai = [
     { k: 'claude', l: 'Claude (Anthropic)', n: t.notes.claude },
     { k: 'gemini', l: 'Gemini (Google)', n: t.notes.gemini },
@@ -92,6 +101,17 @@ export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, l
         <button className="btn-ghost" onClick={() => onSave(v)}>{t.back}</button>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: '#e2b96f' }}>{t.setTitle}</h2>
       </div>
+
+      {deferredPrompt && (
+        <div className="card" style={{ padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(130deg, rgba(80, 216, 144, 0.15), rgba(40, 160, 224, 0.15))', border: '1px solid rgba(111, 207, 151, 0.4)' }}>
+          <div style={{ fontSize: 13, color: '#eef4ff', fontWeight: 600 }}>
+            {t.installApp}
+          </div>
+          <button className="btn-gold" style={{ margin: 0, padding: '6px 14px', fontSize: 13 }} onClick={handleInstallClick}>
+            {lang === 'zh' ? '安裝' : 'Install'}
+          </button>
+        </div>
+      )}
 
       <div className="card" style={{ padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 13, color: '#a8b8d5' }}>

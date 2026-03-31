@@ -17,6 +17,7 @@ export default function App() {
   const [story, setStory] = useState('');
   const [error, setError] = useState('');
   
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const { stories, cfg, gToken, isSyncing, saveCfg, saveStory, delStory, handleDriveSync } = useStorage();
   const t = T[lang];
 
@@ -25,6 +26,14 @@ export default function App() {
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
+    
+    // PWA Installation Prompt Capture
+    const handleBIP = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBIP);
+    return () => window.removeEventListener('beforeinstallprompt', handleBIP);
   }, []);
 
   const handleGenerate = async () => {
@@ -52,7 +61,8 @@ export default function App() {
 
   if (page === 'settings') return wrap(
     <SettingsPage cfg={cfg} onSave={handleSaveCfg} onBack={() => setPage('home')} 
-      gToken={gToken} isSyncing={isSyncing} onSync={handleDriveSync} lang={lang} />
+      gToken={gToken} isSyncing={isSyncing} onSync={handleDriveSync} lang={lang}
+      deferredPrompt={deferredPrompt} setDeferredPrompt={setDeferredPrompt} />
   );
   if (page === 'loading') return wrap(<LoadingPage lang={lang} />);
   if (page === 'story') return wrap(
