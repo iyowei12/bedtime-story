@@ -256,14 +256,23 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
         )}
       </div>
 
-      {deferredPrompt && (
-        <div className="card" style={{ padding: '14px 18px', marginBottom: 26, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {deferredPrompt ? (
+        <div className="card" style={{ padding: '14px 18px', marginBottom: 26, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(226, 185, 111, 0.4)' }}>
           <div style={{ fontSize: 13, color: '#eef4ff', fontWeight: 600 }}>
             {t.installApp}
           </div>
-          <button className="btn-ghost-sm" style={{ margin: 0, color: '#e2b96f', border: '1px solid rgba(226, 185, 111, 0.4)' }} onClick={handleInstallClick}>
-            {lang === 'zh' ? '安裝' : 'Install'}
+          <button className="btn-ghost-sm" style={{ margin: 0, color: '#e2b96f' }} onClick={handleInstallClick}>
+            {lang === 'zh' ? '立刻安裝' : 'Install Now'}
           </button>
+        </div>
+      ) : (
+        <div className="card" style={{ padding: '18px', marginBottom: 26, background: 'rgba(226, 185, 111, 0.05)', border: '1px dashed rgba(226, 185, 111, 0.2)' }}>
+          <div style={{ fontSize: 14, color: '#e2b96f', fontWeight: 700, marginBottom: 8 }}>
+            {t.iosPwaTitle}
+          </div>
+          <div style={{ fontSize: 12, color: '#a8b8d5', lineHeight: 1.6 }}>
+            {t.iosPwaTip}
+          </div>
         </div>
       )}
     </div>
