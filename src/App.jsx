@@ -31,6 +31,7 @@ export default function App() {
     const handleBIP = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      console.log('✅ PWA Install Prompt Captured!');
     };
     window.addEventListener('beforeinstallprompt', handleBIP);
     return () => window.removeEventListener('beforeinstallprompt', handleBIP);
