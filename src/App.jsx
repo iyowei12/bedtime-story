@@ -60,7 +60,7 @@ export default function App() {
   );
 
   if (page === 'settings') return wrap(
-    <SettingsPage cfg={cfg} onSave={handleSaveCfg} onBack={() => setPage('home')} 
+    <SettingsPage cfg={cfg} onSave={handleSaveCfg}
       gToken={gToken} isSyncing={isSyncing} onSync={handleDriveSync} lang={lang}
       deferredPrompt={deferredPrompt} setDeferredPrompt={setDeferredPrompt} />
   );

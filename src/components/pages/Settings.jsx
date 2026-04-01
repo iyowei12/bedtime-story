@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { T } from '../../locales/translations';
 import { bgm } from '../../services/bgm';
 
-export function SettingsPage({ cfg, onSave, onBack, gToken, isSyncing, onSync, lang, deferredPrompt, setDeferredPrompt }) {
+export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, deferredPrompt, setDeferredPrompt }) {
   const t = T[lang];
   const [v, setV] = useState(cfg);
   const [showAi, setShowAi] = useState(false);

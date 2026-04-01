@@ -1,35 +1,37 @@
 {
-  "name": "Bedtime Story",
-  "short_name": "BedtimeStory",
-  "description": "Turn any storybook into a designated bedtime tale with AI.",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#0a1930",
-  "theme_color": "#0a1930",
-  "icons": [
-    {
-      "src": "./pwa-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./pwa-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "./pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ]
+"name": "Bedtime Story",
+"short_name": "BedtimeStory",
+"description": "Turn any storybook into a designated bedtime tale with AI.",
+"start_url": "/bedtime-story/",
+"scope": "/bedtime-story/",
+"id": "/bedtime-story/",
+"display": "standalone",
+"background_color": "#0a1930",
+"theme_color": "#0a1930",
+"icons": [
+{
+"src": "pwa-192x192.png",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "any"
+},
+{
+"src": "pwa-192x192.png",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "maskable"
+},
+{
+"src": "pwa-512x512.png",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "any"
+},
+{
+"src": "pwa-512x512.png",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "maskable"
+}
+]
 }
