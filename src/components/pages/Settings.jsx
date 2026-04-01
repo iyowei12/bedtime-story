@@ -268,10 +268,10 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
       ) : (
         <div className="card" style={{ padding: '18px', marginBottom: 26, background: 'rgba(226, 185, 111, 0.05)', border: '1px dashed rgba(226, 185, 111, 0.2)' }}>
           <div style={{ fontSize: 14, color: '#e2b96f', fontWeight: 700, marginBottom: 8 }}>
-            {t.iosPwaTitle}
+            {/iPad|iPhone|iPod/.test(navigator.userAgent) ? t.iosPwaTitle : t.androidPwaTitle}
           </div>
           <div style={{ fontSize: 12, color: '#a8b8d5', lineHeight: 1.6 }}>
-            {t.iosPwaTip}
+            {/iPad|iPhone|iPod/.test(navigator.userAgent) ? t.iosPwaTip : t.androidPwaTip}
           </div>
         </div>
       )}
