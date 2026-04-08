@@ -15,26 +15,36 @@ export function HomePage({
   
   const displayHero = lang === 'zh' ? cfg.childName : (cfg.childNameEn || cfg.childName);
 
-  const onFile = (e) => {
-    const f = e.target.files?.[0];
-    if (!f || imgs.length >= 3) return;
-    const r = new FileReader();
-    r.onload = ev => {
-      const im = new Image();
-      im.onload = () => {
-        const MAX = 1200;
-        const ratio = Math.min(MAX / im.width, MAX / im.height, 1);
-        const c = document.createElement('canvas');
-        c.width = Math.round(im.width * ratio);
-        c.height = Math.round(im.height * ratio);
-        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-        const newImg = c.toDataURL('image/jpeg', .85);
-        setImgs([...imgs, newImg].slice(0, 3));
-      };
-      im.src = ev.target.result;
-    };
-    r.readAsDataURL(f);
+  const onFile = async (e) => {
+    const files = Array.from(e.target.files || []);
     e.target.value = '';
+    
+    if (!files.length || imgs.length >= 3) return;
+
+    const slotsLeft = 3 - imgs.length;
+    const filesToProcess = files.slice(0, slotsLeft);
+    
+    const newImgs = await Promise.all(filesToProcess.map(f => {
+      return new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = ev => {
+          const im = new Image();
+          im.onload = () => {
+            const MAX = 1200;
+            const ratio = Math.min(MAX / im.width, MAX / im.height, 1);
+            const c = document.createElement('canvas');
+            c.width = Math.round(im.width * ratio);
+            c.height = Math.round(im.height * ratio);
+            c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+            resolve(c.toDataURL('image/jpeg', 0.85));
+          };
+          im.src = ev.target.result;
+        };
+        r.readAsDataURL(f);
+      });
+    }));
+    
+    setImgs(prev => [...prev, ...newImgs].slice(0, 3));
   };
 
   const removeImg = (idx) => {
@@ -44,7 +54,7 @@ export function HomePage({
   return (
     <div className="page" style={{ paddingTop: 38 }}>
       <input ref={camRef} type="file" accept="image/*" capture="environment" onChange={onFile} style={{ display: 'none' }} />
-      <input ref={galRef} type="file" accept="image/*" onChange={onFile} style={{ display: 'none' }} />
+      <input ref={galRef} type="file" accept="image/*" multiple onChange={onFile} style={{ display: 'none' }} />
 
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 30 }}>
