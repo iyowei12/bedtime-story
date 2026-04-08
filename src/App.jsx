@@ -13,7 +13,7 @@ export default function App() {
   const [page, setPage] = useState('home');
   const [lang, setLang] = useState('zh');
   const [len, setLen] = useState('3');
-  const [img, setImg] = useState(null);
+  const [imgs, setImgs] = useState([]);
   const [story, setStory] = useState('');
   const [error, setError] = useState('');
   
@@ -38,11 +38,11 @@ export default function App() {
   }, []);
 
   const handleGenerate = async () => {
-    if (!img) { setError(t.noPhoto); return; }
+    if (imgs.length === 0) { setError(t.noPhoto); return; }
     setError(''); setPage('loading');
     
     try {
-      const text = await generateStory({ img, len, cfg, lang });
+      const text = await generateStory({ imgs, len, cfg, lang });
       setStory(text);
       setPage('story');
     } catch (e) {
@@ -70,7 +70,7 @@ export default function App() {
     <StoryPage story={story} lang={lang} cfg={cfg}
       isAlreadySaved={stories.some(s => s.text === story)}
       onSave={(s) => saveStory(s, lang)} onBack={() => setPage('home')}
-      onNew={() => { setImg(null); setPage('home'); }} />
+      onNew={() => { setImgs([]); setPage('home'); }} />
   );
   if (page === 'library') return wrap(
     <LibraryPage stories={stories}
@@ -81,7 +81,7 @@ export default function App() {
   return wrap(
     <HomePage
       lang={lang} setLang={setLang}
-      img={img} setImg={setImg}
+      imgs={imgs} setImgs={setImgs}
       len={len} setLen={setLen}
       cfg={cfg} error={error}
       onGenerate={handleGenerate}

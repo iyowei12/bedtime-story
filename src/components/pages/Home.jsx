@@ -4,7 +4,7 @@ import { T } from '../../locales/translations';
 
 export function HomePage({
   lang, setLang,
-  img, setImg,
+  imgs, setImgs,
   len, setLen,
   cfg, error,
   onGenerate, setPage
@@ -17,7 +17,7 @@ export function HomePage({
 
   const onFile = (e) => {
     const f = e.target.files?.[0];
-    if (!f) return;
+    if (!f || imgs.length >= 3) return;
     const r = new FileReader();
     r.onload = ev => {
       const im = new Image();
@@ -28,12 +28,17 @@ export function HomePage({
         c.width = Math.round(im.width * ratio);
         c.height = Math.round(im.height * ratio);
         c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-        setImg(c.toDataURL('image/jpeg', .85));
+        const newImg = c.toDataURL('image/jpeg', .85);
+        setImgs([...imgs, newImg].slice(0, 3));
       };
       im.src = ev.target.result;
     };
     r.readAsDataURL(f);
     e.target.value = '';
+  };
+
+  const removeImg = (idx) => {
+    setImgs(imgs.filter((_, i) => i !== idx));
   };
 
   return (
@@ -66,20 +71,44 @@ export function HomePage({
 
       {/* Photo area */}
       <div className="card" style={{ padding: 18, marginBottom: 14 }}>
-        {img ? (
+        {imgs.length > 0 ? (
           <>
-            <img src={img} alt="storybook"
-              style={{ width: '100%', maxHeight: 210, objectFit: 'contain', borderRadius: 13, marginBottom: 13 }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <button className="btn-ghost" style={{ fontSize: 13 }} onClick={() => camRef.current?.click()}>{t.takePhoto}</button>
-              <button className="btn-ghost" style={{ fontSize: 13 }} onClick={() => galRef.current?.click()}>{t.choosePhoto}</button>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', marginBottom: 16, paddingBottom: 8 }}>
+              {imgs.map((src, idx) => (
+                <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
+                  <img src={src} alt={`storybook-${idx}`}
+                    style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 12, border: '2px solid rgba(226, 185, 111, 0.3)' }} />
+                  <button 
+                    onClick={() => removeImg(idx)}
+                    style={{ 
+                      position: 'absolute', top: -6, right: -6, 
+                      background: '#ff6b6b', color: '#fff', border: 'none', 
+                      borderRadius: '50%', width: 24, height: 24, 
+                      fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+                    }}>
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
+            {imgs.length < 3 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <button className="btn-gold" style={{ fontSize: 14 }} onClick={() => camRef.current?.click()}>{t.takePhoto}</button>
+                <button className="btn-ghost" style={{ fontSize: 14 }} onClick={() => galRef.current?.click()}>{t.choosePhoto}</button>
+              </div>
+            )}
+            {imgs.length >= 3 && (
+              <div style={{ fontSize: 12, color: '#a8b8d5', textAlign: 'center' }}>
+                {lang === 'zh' ? '已達到最大圖片數量限制 (3張)' : 'Max image limit reached (3 photos)'}
+              </div>
+            )}
           </>
         ) : (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <div style={{ fontSize: 46, marginBottom: 11 }}>📖</div>
             <p style={{ fontSize: 14, color: '#5a80b8', marginBottom: 17, fontWeight: 600 }}>
-              {lang === 'zh' ? '拍一張故事書的照片' : 'Take a photo of your storybook'}
+              {lang === 'zh' ? '拍下故事書的照片 (最多3張)' : 'Take photos of your storybook (max 3)'}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <button className="btn-gold" style={{ fontSize: 14 }} onClick={() => camRef.current?.click()}>{t.takePhoto}</button>
@@ -102,7 +131,7 @@ export function HomePage({
 
       {error && <div className="error">❌ {error}</div>}
 
-      <button className="btn-gold" disabled={!img} onClick={onGenerate}>{t.generate}</button>
+      <button className="btn-gold" disabled={imgs.length === 0} onClick={onGenerate}>{t.generate}</button>
 
       {displayHero && (
         <p style={{ textAlign: 'center', fontSize: 13, color: '#5a80b8', marginTop: 11, fontWeight: 600 }}>
