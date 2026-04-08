@@ -9,6 +9,7 @@ const GTE = 'GD_TOKEN_EXPIRES_AT';
 export const DEFAULT_CFG = {
   childName: '',
   childNameEn: '',
+  nameHistory: [],
   configUpdatedAt: '',
   browserVoice: '',
   bgmEnabled: true,
@@ -153,6 +154,7 @@ export function useStorage() {
         ...currentCfg,
         childName: payload.childName ?? currentCfg.childName,
         childNameEn: payload.childNameEn ?? currentCfg.childNameEn,
+        nameHistory: payload.nameHistory ?? currentCfg.nameHistory,
         bgmEnabled: payload.bgmEnabled ?? currentCfg.bgmEnabled,
         bgmType: payload.bgmType ?? currentCfg.bgmType,
         bgmVolume: payload.bgmVolume ?? currentCfg.bgmVolume,

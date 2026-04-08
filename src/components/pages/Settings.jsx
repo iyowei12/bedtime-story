@@ -98,7 +98,20 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
   return (
     <div className="page" style={{ paddingTop: 38 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <button className="btn-ghost" onClick={() => onSave(v)}>{t.back}</button>
+        <button className="btn-ghost" onClick={() => {
+          let newV = { ...v };
+          if (newV.childName?.trim() || newV.childNameEn?.trim()) {
+            let h = newV.nameHistory || [];
+            const zh = (newV.childName || '').trim();
+            const en = (newV.childNameEn || '').trim();
+            h = h.filter(p => p.zh !== zh || p.en !== en);
+            h = [{ zh, en }, ...h].slice(0, 5);
+            newV.nameHistory = h;
+          }
+          delete newV.childNameHistory;
+          delete newV.childNameEnHistory;
+          onSave(newV);
+        }}>{t.back}</button>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: '#e2b96f' }}>{t.setTitle}</h2>
       </div>
 
@@ -120,7 +133,50 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
       </div>
 
       <div className="card" style={{ padding: 18, marginBottom: 13 }}>
-        <div style={{ marginBottom: 12 }}>
+        {v.nameHistory && v.nameHistory.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <span className="label">🧸 {lang === 'zh' ? '常用主角' : 'Recent Profiles'}</span>
+            <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
+              {v.nameHistory.map((profile, i) => {
+                const isActive = v.childName === profile.zh && v.childNameEn === profile.en;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: isActive ? 'rgba(226, 185, 111, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${isActive ? '#e2b96f' : 'rgba(255, 255, 255, 0.1)'}`,
+                      borderRadius: 16, padding: '6px 4px 6px 14px',
+                      boxShadow: isActive ? '0 0 10px rgba(226, 185, 111, 0.2)' : 'none'
+                    }}
+                  >
+                    <div
+                      onClick={() => setV({ ...v, childName: profile.zh, childNameEn: profile.en })}
+                      style={{ flex: 1, cursor: 'pointer', padding: '4px 0' }}
+                    >
+                      <div style={{ fontSize: 16, color: isActive ? '#e2b96f' : '#eef4ff', fontWeight: 800 }}>{profile.zh || '-'}</div>
+                      <div style={{ fontSize: 13, color: '#a8b8d5', marginTop: 3 }}>{profile.en || '-'}</div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setV({ ...v, nameHistory: v.nameHistory.filter((_, idx) => idx !== i) });
+                      }}
+                      style={{
+                        background: 'none', border: 'none', color: '#ff6b6b',
+                        padding: '10px 14px', fontSize: 20, cursor: 'pointer', opacity: 0.8
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div style={{ marginBottom: 16 }}>
           <span className="label">👶 {t.cName}</span>
           <input className="field" value={v.childName || ''} onChange={e => setV({ ...v, childName: e.target.value })} placeholder={t.cPH} />
         </div>

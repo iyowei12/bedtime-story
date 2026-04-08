@@ -59,6 +59,7 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
   let cloudDeletedIds = [];
   let cloudChildName = '';
   let cloudChildNameEn = '';
+  let cloudNameHistory = [];
   let cloudConfigUpdatedAt = '';
   
   // 向下相容舊版陣列格式
@@ -69,6 +70,7 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     cloudDeletedIds = cloudData.deletedIds || [];
     cloudChildName = cloudData.childName || '';
     cloudChildNameEn = cloudData.childNameEn || '';
+    cloudNameHistory = cloudData.nameHistory || [];
     cloudConfigUpdatedAt = cloudData.configUpdatedAt || '';
   }
 
@@ -100,6 +102,10 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     ? (cloudChildNameEn || localCfg.childNameEn || '') 
     : (localCfg.childNameEn || cloudChildNameEn || '');
     
+  const mergedNameHistory = shouldUseCloudCfg
+    ? (cloudNameHistory?.length ? cloudNameHistory : localCfg.nameHistory)
+    : (localCfg.nameHistory?.length ? localCfg.nameHistory : cloudNameHistory);
+
   const mergedConfigUpdatedAt = shouldUseCloudCfg ? cloudConfigUpdatedAt : localConfigUpdatedAt;
 
   // 寫回雲端的新格式
@@ -108,6 +114,7 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     deletedIds: mergedDeletedIds,
     childName: mergedChildName,
     childNameEn: mergedChildNameEn,
+    nameHistory: mergedNameHistory || [],
     bgmEnabled: shouldUseCloudCfg ? (cloudData.bgmEnabled ?? localCfg.bgmEnabled) : (localCfg.bgmEnabled ?? cloudData.bgmEnabled),
     bgmType: shouldUseCloudCfg ? (cloudData.bgmType || localCfg.bgmType) : (localCfg.bgmType || cloudData.bgmType),
     bgmVolume: shouldUseCloudCfg ? (cloudData.bgmVolume ?? localCfg.bgmVolume) : (localCfg.bgmVolume ?? cloudData.bgmVolume),
