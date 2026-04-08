@@ -91,7 +91,7 @@ export function HomePage({
                   <button 
                     onClick={() => removeImg(idx)}
                     style={{ 
-                      position: 'absolute', top: -6, right: -6, 
+                      position: 'absolute', top: 4, right: 4, 
                       background: '#ff6b6b', color: '#fff', border: 'none', 
                       borderRadius: '50%', width: 24, height: 24, 
                       fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
