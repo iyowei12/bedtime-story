@@ -24,7 +24,7 @@ export function useStorage() {
   
   // 提供給 UI 的同步狀態
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const isLoggedIn = !!sessionStorage.getItem('GD_TOKEN');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const onStorageChanged = (payload: { type: string, data?: unknown }) => {
@@ -39,13 +39,19 @@ export function useStorage() {
     const onSyncStatus = (status: SyncStatus) => {
       setSyncStatus(status);
     };
+    
+    const onAuthStateChanged = (user: import('firebase/auth').User | null) => {
+      setIsLoggedIn(!!user);
+    };
 
     bus.on('storage:changed', onStorageChanged);
     bus.on('sync:status', onSyncStatus);
+    bus.on('auth:state_changed', onAuthStateChanged);
 
     return () => {
       bus.off('storage:changed', onStorageChanged);
       bus.off('sync:status', onSyncStatus);
+      bus.off('auth:state_changed', onAuthStateChanged);
     };
   }, []);
 

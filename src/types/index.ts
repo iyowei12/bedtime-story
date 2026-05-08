@@ -1,5 +1,7 @@
 export type AIProvider = 'openai' | 'claude' | 'gemini';
 export type TTSProvider = 'openai' | 'edge' | 'google' | 'azure' | 'browser' | 'elevenlabs';
+import type { User } from 'firebase/auth';
+
 export type Language = 'zh' | 'en';
 export type StoryLength = 1 | 3 | 5;
 
@@ -65,6 +67,9 @@ export type BusEvents = {
   'storage:changed': { type: 'cfg' | 'stories'; data?: unknown };
   'sync:request': { interactive: boolean };
   'sync:status': SyncStatus;
+  
+  // Auth Module
+  'auth:state_changed': User | null;
   
   // Business Logic Module
   'story:request_generate': { imgs: string[]; len: StoryLength; cfg: AppConfig; lang: Language };

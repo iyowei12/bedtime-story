@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "firebase": "^12.13.0",
     "lucide-react": "^0.577.0",
     "mitt": "^3.0.1",
     "react": "^19.2.4",
