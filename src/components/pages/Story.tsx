@@ -1,11 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
 import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS, stopBrowserTTS } from '../../services/tts';
 import { bgm } from '../../services/bgm';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { AppConfig, Language } from '../../types';
 
-export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, onNew }) {
+interface StoryPageProps {
+  story: string;
+  lang: Language;
+  cfg: AppConfig;
+  isAlreadySaved: boolean;
+  onSave: (story: string) => void;
+  onBack: () => void;
+  onNew: () => void;
+}
+
+export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, onNew }: StoryPageProps) {
   const t = T[lang];
   const [playing, setPlaying] = useState(false);
   const [loadingTTS, setLoadingTTS] = useState(false);
@@ -13,7 +24,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   const [copied, setCopied] = useState(false);
   const [showTTSModal, setShowTTSModal] = useState(false);
   const [saved, setSaved] = useState(isAlreadySaved);
-  const audioRef = useRef(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const browserPaused = useRef(false);
 
   useEffect(() => {
@@ -85,7 +96,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
         case 'google': await playGoogleTTS(args); break;
         default: playBrowser(args);
       }
-    } catch (e) {
+    } catch (e: any) {
       alert('TTS Error: ' + e.message);
       setPlaying(false);
     } finally {

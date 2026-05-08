@@ -1,8 +1,16 @@
-import React from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
+import { StoryItem, Language } from '../../types';
 
-export function LibraryPage({ stories, onSelect, onDelete, onBack, lang }) {
+interface LibraryPageProps {
+  stories: StoryItem[];
+  onSelect: (text: string) => void;
+  onDelete: (id: string | number) => void;
+  onBack: () => void;
+  lang: Language;
+}
+
+export function LibraryPage({ stories, onSelect, onDelete, onBack, lang }: LibraryPageProps) {
   const t = T[lang];
   return (
     <div className="page" style={{ paddingTop: 38 }}>

@@ -1,9 +1,7 @@
-import React from 'react';
-
-const starAt = (i) => {
+const starAt = (i: number) => {
   const seed = i + 1;
-  const frac = (n) => n - Math.floor(n);
-  const mix = (a, b) => frac(Math.sin(seed * a + b) * 10000);
+  const frac = (n: number) => n - Math.floor(n);
+  const mix = (a: number, b: number) => frac(Math.sin(seed * a + b) * 10000);
 
   return {
     id: i,

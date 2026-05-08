@@ -1,6 +1,20 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
+import { AppConfig, Language, StoryLength } from '../../types';
+
+interface HomePageProps {
+  lang: Language;
+  setLang: React.Dispatch<React.SetStateAction<Language>>;
+  imgs: string[];
+  setImgs: React.Dispatch<React.SetStateAction<string[]>>;
+  len: StoryLength;
+  setLen: React.Dispatch<React.SetStateAction<StoryLength>>;
+  cfg: AppConfig;
+  error: string;
+  onGenerate: () => void;
+  setPage: (page: string) => void;
+}
 
 export function HomePage({
   lang, setLang,
@@ -8,14 +22,14 @@ export function HomePage({
   len, setLen,
   cfg, error,
   onGenerate, setPage
-}) {
+}: HomePageProps) {
   const t = T[lang];
-  const camRef = useRef();
-  const galRef = useRef();
+  const camRef = useRef<HTMLInputElement>(null);
+  const galRef = useRef<HTMLInputElement>(null);
   
   const displayHero = lang === 'zh' ? cfg.childName : (cfg.childNameEn || cfg.childName);
 
-  const onFile = async (e) => {
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     e.target.value = '';
     
@@ -25,7 +39,7 @@ export function HomePage({
     const filesToProcess = files.slice(0, slotsLeft);
     
     const newImgs = await Promise.all(filesToProcess.map(f => {
-      return new Promise(resolve => {
+      return new Promise<string>(resolve => {
         const r = new FileReader();
         r.onload = ev => {
           const im = new Image();
@@ -35,10 +49,11 @@ export function HomePage({
             const c = document.createElement('canvas');
             c.width = Math.round(im.width * ratio);
             c.height = Math.round(im.height * ratio);
-            c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+            const ctx = c.getContext('2d');
+            if (ctx) ctx.drawImage(im, 0, 0, c.width, c.height);
             resolve(c.toDataURL('image/jpeg', 0.85));
           };
-          im.src = ev.target.result;
+          im.src = ev.target?.result as string;
         };
         r.readAsDataURL(f);
       });
@@ -47,7 +62,7 @@ export function HomePage({
     setImgs(prev => [...prev, ...newImgs].slice(0, 3));
   };
 
-  const removeImg = (idx) => {
+  const removeImg = (idx: number) => {
     setImgs(imgs.filter((_, i) => i !== idx));
   };
 
@@ -132,7 +147,7 @@ export function HomePage({
       <div className="card" style={{ padding: 16, marginBottom: 14 }}>
         <span className="label">⏱ {t.lenLabel}</span>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9 }}>
-          {[['1', t.min1], ['3', t.min3], ['5', t.min5]].map(([v, l]) => (
+          {([[1, t.min1], [3, t.min3], [5, t.min5]] as const).map(([v, l]) => (
             <button key={v} className={`len-btn ${len === v ? 'len-active' : 'len-inactive'}`}
               onClick={() => setLen(v)}>{l}</button>
           ))}

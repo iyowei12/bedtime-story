@@ -1,13 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { T } from '../../locales/translations';
 import { bgm } from '../../services/bgm';
+import { AppConfig, Language, AIProvider, TTSProvider } from '../../types';
 
-export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, deferredPrompt, setDeferredPrompt }) {
+interface SettingsPageProps {
+  cfg: AppConfig;
+  onSave: (cfg: AppConfig) => void;
+  gToken: string | null;
+  isSyncing: boolean;
+  onSync: (interactive: boolean) => void;
+  lang: Language;
+  deferredPrompt: any;
+  setDeferredPrompt: (prompt: any) => void;
+}
+
+export function SettingsPage({
+  cfg, onSave, gToken, isSyncing, onSync, lang, deferredPrompt, setDeferredPrompt
+}: SettingsPageProps) {
   const t = T[lang];
-  const [v, setV] = useState(cfg);
+  const [v, setV] = useState<AppConfig>(cfg);
   const [showAi, setShowAi] = useState(false);
   const [showTts, setShowTts] = useState(false);
-  const [browserVoices, setBrowserVoices] = useState([]);
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [isPreviewingBgm, setIsPreviewingBgm] = useState(false);
 
   useEffect(() => {
@@ -29,13 +43,13 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
     }
   };
 
-  const ai = [
+  const ai: { k: AIProvider; l: string; n: string }[] = [
     { k: 'claude', l: 'Claude (Anthropic)', n: t.notes.claude },
     { k: 'gemini', l: 'Gemini (Google)', n: t.notes.gemini },
     { k: 'openai', l: 'ChatGPT (OpenAI)', n: t.notes.openai },
   ];
   
-  const tts = [
+  const tts: { k: TTSProvider; l: string; n: string }[] = [
     { k: 'browser', l: lang === 'zh' ? '瀏覽器內建（免費）' : 'Browser Built-in (Free)', n: t.notes.browser },
     { k: 'elevenlabs', l: 'ElevenLabs', n: t.notes.elevenlabs },
     { k: 'openai', l: 'OpenAI TTS', n: t.notes.openaiTts },
@@ -44,15 +58,15 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
   
   const aiObj = ai.find(x => x.k === v.aiProvider) || ai[0];
   const aiNote = aiObj.n;
-  const aiUrl = t.urls[aiObj.k];
-  const activeAiKey = v.aiKeys?.[v.aiProvider] || '';
+  const aiUrl = t.urls[aiObj.k as keyof typeof t.urls];
+  const activeAiKey = v.aiKeys?.[v.aiProvider as keyof typeof v.aiKeys] || '';
   
   const ttsObj = tts.find(x => x.k === v.ttsProvider) || tts[0];
   const ttsNote = ttsObj.n;
-  const ttsUrl = t.urls[ttsObj.k];
-  const activeTtsKey = v.ttsKeys?.[v.ttsProvider] || '';
+  const ttsUrl = t.urls[ttsObj.k as keyof typeof t.urls];
+  const activeTtsKey = v.ttsKeys?.[v.ttsProvider as keyof typeof v.ttsKeys] || '';
 
-  const updateAiKey = (value) => {
+  const updateAiKey = (value: string) => {
     setV({
       ...v,
       aiKey: v.aiProvider === 'openai' ? value : v.aiKey,
@@ -63,7 +77,7 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
     });
   };
 
-  const updateTtsKey = (value) => {
+  const updateTtsKey = (value: string) => {
     setV({
       ...v,
       ttsKey: v.ttsProvider === 'browser' ? v.ttsKey : value,
@@ -137,7 +151,7 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
           <div style={{ marginBottom: 20 }}>
             <span className="label">🧸 {lang === 'zh' ? '常用主角' : 'Recent Profiles'}</span>
             <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
-              {v.nameHistory.map((profile, i) => {
+              {(v.nameHistory || []).map((profile, i) => {
                 const isActive = v.childName === profile.zh && v.childNameEn === profile.en;
                 return (
                   <div
@@ -160,7 +174,7 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setV({ ...v, nameHistory: v.nameHistory.filter((_, idx) => idx !== i) });
+                        setV({ ...v, nameHistory: (v.nameHistory || []).filter((_, idx) => idx !== i) });
                       }}
                       style={{
                         background: 'none', border: 'none', color: '#ff6b6b',
@@ -227,7 +241,7 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
       <div className="card" style={{ padding: 18, marginBottom: 13 }}>
         <span className="label">🤖 {t.aiProv}</span>
 
-        <select className="field" value={v.aiProvider} onChange={e => setV({ ...v, aiProvider: e.target.value })} style={{ marginBottom: 10 }}>
+        <select className="field" value={v.aiProvider} onChange={e => setV({ ...v, aiProvider: e.target.value as AIProvider })} style={{ marginBottom: 10 }}>
           {ai.map(o => <option key={o.k} value={o.k}>{o.l}</option>)}
         </select>
         <p style={{ fontSize: 12, color: '#5a80b8', marginBottom: 10, lineHeight: 1.55 }}>
@@ -244,7 +258,7 @@ export function SettingsPage({ cfg, onSave, gToken, isSyncing, onSync, lang, def
 
       <div className="card" style={{ padding: 18, marginBottom: 26 }}>
         <span className="label">🔊 {t.ttsProv}</span>
-        <select className="field" value={v.ttsProvider} onChange={e => setV({ ...v, ttsProvider: e.target.value })} style={{ marginBottom: 10 }}>
+        <select className="field" value={v.ttsProvider} onChange={e => setV({ ...v, ttsProvider: e.target.value as TTSProvider })} style={{ marginBottom: 10 }}>
           {tts.map(o => <option key={o.k} value={o.k}>{o.l}</option>)}
         </select>
         <p style={{ fontSize: 12, color: '#5a80b8', marginBottom: v.ttsProvider !== 'browser' ? 10 : 0, lineHeight: 1.55 }}>

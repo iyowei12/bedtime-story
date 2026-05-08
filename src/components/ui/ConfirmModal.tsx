@@ -1,4 +1,12 @@
-import React from 'react';
+interface ConfirmModalProps {
+  visible: boolean;
+  title?: string;
+  content?: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
 
 export function ConfirmModal({ 
   visible, 
@@ -8,7 +16,7 @@ export function ConfirmModal({
   cancelText, 
   onConfirm, 
   onCancel 
-}) {
+}: ConfirmModalProps) {
   if (!visible) return null;
 
   return (

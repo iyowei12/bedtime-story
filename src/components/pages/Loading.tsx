@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
+import { Language } from '../../types';
 
-export function LoadingPage({ lang }) {
+interface LoadingPageProps {
+  lang: Language;
+}
+
+export function LoadingPage({ lang }: LoadingPageProps) {
   const t = T[lang];
   const msgs = [t.g1, t.g2, t.g3, t.g4];
   const [idx, setIdx] = useState(0);

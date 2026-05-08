@@ -1,4 +1,11 @@
-export const playBlob = (url, audioRef, onEnd, setPlaying) => {
+import { AppConfig, Language } from '../types';
+
+export const playBlob = (
+  url: string,
+  audioRef: React.RefObject<HTMLAudioElement | null> | null,
+  onEnd: () => void,
+  setPlaying: (playing: boolean) => void
+) => {
   const a = new Audio(url);
   if (audioRef) audioRef.current = a;
   a.onended = onEnd;
@@ -7,9 +14,14 @@ export const playBlob = (url, audioRef, onEnd, setPlaying) => {
   setPlaying(true);
 };
 
-const getTtsKey = (cfg, provider) => cfg.ttsKeys?.[provider]?.trim() || cfg.ttsKey?.trim() || '';
-const getOpenAIKey = (cfg) => cfg.aiKeys?.openai?.trim() || cfg.aiKey?.trim() || '';
-const findPreferredBrowserVoice = (voices, lang, configuredVoice) => {
+const getTtsKey = (cfg: AppConfig, provider: string) => cfg.ttsKeys?.[provider]?.trim() || cfg.ttsKey?.trim() || '';
+const getOpenAIKey = (cfg: AppConfig) => cfg.aiKeys?.openai?.trim() || cfg.aiKey?.trim() || '';
+
+const findPreferredBrowserVoice = (
+  voices: SpeechSynthesisVoice[],
+  lang: Language,
+  configuredVoice?: string
+): SpeechSynthesisVoice | null => {
   if (!voices?.length) return null;
 
   if (configuredVoice) {
@@ -35,7 +47,7 @@ const findPreferredBrowserVoice = (voices, lang, configuredVoice) => {
   ) || null;
 };
 
-let activeBrowserUtterance = null;
+let activeBrowserUtterance: SpeechSynthesisUtterance | null = null;
 
 export const stopBrowserTTS = () => {
   if (activeBrowserUtterance) {
@@ -48,7 +60,19 @@ export const stopBrowserTTS = () => {
   }
 };
 
-export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }) => {
+interface PlayTTSParams {
+  story: string;
+  lang: Language;
+  cfg: AppConfig;
+  onEnd: () => void;
+  setPlaying: (playing: boolean) => void;
+}
+
+interface PlayTTSBlobParams extends PlayTTSParams {
+  audioRef: React.RefObject<HTMLAudioElement | null> | null;
+}
+
+export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }: PlayTTSParams) => {
   if (!window.speechSynthesis) return;
   stopBrowserTTS();
   const u = new SpeechSynthesisUtterance(story);
@@ -67,7 +91,7 @@ export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }) => {
   setPlaying(true);
 };
 
-export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
+export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }: PlayTTSBlobParams) => {
   const k = getTtsKey(cfg, 'elevenlabs');
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 ElevenLabs API Key' : 'Please add ElevenLabs API Key in Settings');
@@ -113,7 +137,7 @@ export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPla
   playBlob(URL.createObjectURL(await r.blob()), audioRef, onEnd, setPlaying);
 };
 
-export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
+export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }: PlayTTSBlobParams) => {
   const k = getOpenAIKey(cfg);
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 OpenAI API Key' : 'Please add OpenAI API Key in Settings');
@@ -155,7 +179,7 @@ export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
   playBlob(URL.createObjectURL(await r.blob()), audioRef, onEnd, setPlaying);
 };
 
-export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }) => {
+export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }: PlayTTSBlobParams) => {
   const k = getTtsKey(cfg, 'google');
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 Google Cloud TTS API Key' : 'Please add Google Cloud TTS API Key in Settings');

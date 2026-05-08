@@ -1,9 +1,46 @@
+import { AppConfig, StoryItem, NameProfile } from '../types';
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 const FILE_NAME = 'bedtime_stories_sync.json';
 
+interface DriveAccessResponse {
+  accessToken: string;
+  expiresIn: number;
+  scope: string;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string;
+            scope: string;
+            prompt?: string;
+            callback: (response: {
+              access_token: string;
+              expires_in: string;
+              scope: string;
+              error?: string;
+            }) => void;
+            error_callback?: (error: { type: string }) => void;
+          }) => {
+            requestAccessToken: (options?: { prompt?: string }) => void;
+          };
+        };
+      };
+    };
+  }
+}
+
 // 要求與取得授權 Access Token
-export const requestDriveAccess = (onSuccess, onError, options = {}) => {
+export const requestDriveAccess = (
+  onSuccess: (res: DriveAccessResponse) => void,
+  onError: (err: Error) => void,
+  options: { prompt?: string } = {}
+) => {
   if (!window.google) return onError?.(new Error('Google Identity Services script not loaded.'));
   const client = window.google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
@@ -24,12 +61,12 @@ export const requestDriveAccess = (onSuccess, onError, options = {}) => {
   });
 };
 
-const getHeaders = (token) => ({
+const getHeaders = (token: string) => ({
   'Authorization': `Bearer ${token}`
 });
 
 // 尋找存在 AppData 的備份檔案
-const findFile = async (token) => {
+const findFile = async (token: string) => {
   const r = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'`, { headers: getHeaders(token) });
   if (!r.ok) {
     const d = await r.json();
@@ -40,9 +77,9 @@ const findFile = async (token) => {
 };
 
 // 統步合併邏輯：上傳本地 + 下載雲端
-export const syncWithDrive = async (token, localStories, localDeletedIds = [], localCfg = {}) => {
+export const syncWithDrive = async (token: string, localStories: StoryItem[], localDeletedIds: (string | number)[] = [], localCfg: AppConfig = {} as AppConfig) => {
   const file = await findFile(token);
-  let cloudData = null;
+  let cloudData: any = null;
   let fileId = file?.id;
 
   // 下載雲端現有資料
@@ -55,11 +92,11 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     cloudData = await rf.json();
   }
 
-  let cloudStories = [];
-  let cloudDeletedIds = [];
+  let cloudStories: StoryItem[] = [];
+  let cloudDeletedIds: (string | number)[] = [];
   let cloudChildName = '';
   let cloudChildNameEn = '';
-  let cloudNameHistory = [];
+  let cloudNameHistory: NameProfile[] = [];
   let cloudConfigUpdatedAt = '';
   
   // 向下相容舊版陣列格式
@@ -89,11 +126,19 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     }
   });
   // 依時間排序 (最新的在前面)
-  mergedStories.sort((a, b) => new Date(b.date) - new Date(a.date));
+  mergedStories.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // 4. 合併設定與常用主角名單 (去重)
   const localConfigUpdatedAt = localCfg.configUpdatedAt || '';
   const shouldUseCloudCfg = cloudConfigUpdatedAt && (!localConfigUpdatedAt || new Date(cloudConfigUpdatedAt) > new Date(localConfigUpdatedAt));
-  
+
+  const mergedNameHistory = [...(localCfg.nameHistory || [])];
+  cloudNameHistory.forEach(cn => {
+    if (!mergedNameHistory.find(ln => ln.zh === cn.zh && ln.en === cn.en)) {
+      mergedNameHistory.push(cn);
+    }
+  });
+
   const mergedChildName = shouldUseCloudCfg 
     ? (cloudChildName || localCfg.childName || '') 
     : (localCfg.childName || cloudChildName || '');
@@ -101,10 +146,10 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
   const mergedChildNameEn = shouldUseCloudCfg 
     ? (cloudChildNameEn || localCfg.childNameEn || '') 
     : (localCfg.childNameEn || cloudChildNameEn || '');
-    
-  const mergedNameHistory = shouldUseCloudCfg
-    ? (cloudNameHistory?.length ? cloudNameHistory : localCfg.nameHistory)
-    : (localCfg.nameHistory?.length ? localCfg.nameHistory : cloudNameHistory);
+
+  const finalNameHistory = shouldUseCloudCfg
+    ? (cloudNameHistory?.length ? cloudNameHistory : mergedNameHistory)
+    : (mergedNameHistory?.length ? mergedNameHistory : cloudNameHistory);
 
   const mergedConfigUpdatedAt = shouldUseCloudCfg ? cloudConfigUpdatedAt : localConfigUpdatedAt;
 
@@ -114,10 +159,10 @@ export const syncWithDrive = async (token, localStories, localDeletedIds = [], l
     deletedIds: mergedDeletedIds,
     childName: mergedChildName,
     childNameEn: mergedChildNameEn,
-    nameHistory: mergedNameHistory || [],
-    bgmEnabled: shouldUseCloudCfg ? (cloudData.bgmEnabled ?? localCfg.bgmEnabled) : (localCfg.bgmEnabled ?? cloudData.bgmEnabled),
-    bgmType: shouldUseCloudCfg ? (cloudData.bgmType || localCfg.bgmType) : (localCfg.bgmType || cloudData.bgmType),
-    bgmVolume: shouldUseCloudCfg ? (cloudData.bgmVolume ?? localCfg.bgmVolume) : (localCfg.bgmVolume ?? cloudData.bgmVolume),
+    nameHistory: finalNameHistory,
+    bgmEnabled: shouldUseCloudCfg ? (cloudData?.bgmEnabled ?? localCfg.bgmEnabled) : (localCfg.bgmEnabled ?? cloudData?.bgmEnabled),
+    bgmType: shouldUseCloudCfg ? (cloudData?.bgmType || localCfg.bgmType) : (localCfg.bgmType || cloudData?.bgmType),
+    bgmVolume: shouldUseCloudCfg ? (cloudData?.bgmVolume ?? localCfg.bgmVolume) : (localCfg.bgmVolume ?? cloudData?.bgmVolume),
     configUpdatedAt: mergedConfigUpdatedAt
   };
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });

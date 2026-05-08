@@ -9,15 +9,17 @@ import { useStorage } from './hooks/useStorage';
 import { generateStory } from './services/llm';
 import { T } from './locales/translations';
 
+import { Language, StoryLength, AppConfig } from './types';
+
 export default function App() {
-  const [page, setPage] = useState('home');
-  const [lang, setLang] = useState('zh');
-  const [len, setLen] = useState('3');
-  const [imgs, setImgs] = useState([]);
-  const [story, setStory] = useState('');
-  const [error, setError] = useState('');
+  const [page, setPage] = useState<string>('home');
+  const [lang, setLang] = useState<Language>('zh');
+  const [len, setLen] = useState<StoryLength>(3);
+  const [imgs, setImgs] = useState<string[]>([]);
+  const [story, setStory] = useState<string>('');
+  const [error, setError] = useState<string>('');
   
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const { stories, cfg, gToken, isSyncing, saveCfg, saveStory, delStory, handleDriveSync } = useStorage();
   const t = T[lang];
 
@@ -28,13 +30,13 @@ export default function App() {
     }
     
     // PWA Installation Prompt Capture
-    const handleBIP = (e) => {
+    const handleBIP = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       console.log('✅ PWA Install Prompt Captured!');
     };
-    window.addEventListener('beforeinstallprompt', handleBIP);
-    return () => window.removeEventListener('beforeinstallprompt', handleBIP);
+    window.addEventListener('beforeinstallprompt' as any, handleBIP);
+    return () => window.removeEventListener('beforeinstallprompt' as any, handleBIP);
   }, []);
 
   const handleGenerate = async () => {
@@ -45,18 +47,18 @@ export default function App() {
       const text = await generateStory({ imgs, len, cfg, lang });
       setStory(text);
       setPage('story');
-    } catch (e) {
+    } catch (e: any) {
       setError(e.message);
       setPage('home');
     }
   };
 
-  const handleSaveCfg = c => {
+  const handleSaveCfg = (c: Partial<AppConfig>) => {
     saveCfg(c);
     setPage('home');
   };
 
-  const wrap = children => (
+  const wrap = (children: React.ReactNode) => (
     <div className="page-bg"><Stars />{children}</div>
   );
 
@@ -69,12 +71,12 @@ export default function App() {
   if (page === 'story') return wrap(
     <StoryPage story={story} lang={lang} cfg={cfg}
       isAlreadySaved={stories.some(s => s.text === story)}
-      onSave={(s) => saveStory(s, lang)} onBack={() => setPage('home')}
+      onSave={(s: string) => saveStory(s, lang)} onBack={() => setPage('home')}
       onNew={() => { setImgs([]); setPage('home'); }} />
   );
   if (page === 'library') return wrap(
     <LibraryPage stories={stories}
-      onSelect={txt => { setStory(txt); setPage('story'); }}
+      onSelect={(txt: string) => { setStory(txt); setPage('story'); }}
       onDelete={delStory} onBack={() => setPage('home')} lang={lang} />
   );
 

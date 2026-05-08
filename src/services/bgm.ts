@@ -1,14 +1,12 @@
 class BGMService {
-  constructor() {
-    this.audio = null;
-    this.tracks = {
-      lullaby: import.meta.env.BASE_URL + 'bgm/lullaby.m4a',
-      musicbox: import.meta.env.BASE_URL + 'bgm/musicbox.m4a'
-    };
-    this.currentType = null;
-  }
+  private audio: HTMLAudioElement | null = null;
+  private tracks: Record<string, string> = {
+    lullaby: import.meta.env.BASE_URL + 'bgm/lullaby.m4a',
+    musicbox: import.meta.env.BASE_URL + 'bgm/musicbox.m4a'
+  };
+  private currentType: string | null = null;
 
-  play(type, volume) {
+  play(type: string, volume?: number) {
     if (!type || !this.tracks[type]) return;
     
     // 不同首歌、或是首次建立音檔資源

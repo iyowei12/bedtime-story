@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { requestDriveAccess, syncWithDrive } from '../services/drive';
+import { AppConfig, StoryItem, Language } from '../types';
 
 const SK = 'bts_stories_v2';
 const CK = 'bts_config_v2';
 const GT = 'GD_TOKEN';
 const GTE = 'GD_TOKEN_EXPIRES_AT';
 
-export const DEFAULT_CFG = {
+export const DEFAULT_CFG: AppConfig = {
   childName: '',
   childNameEn: '',
   nameHistory: [],
@@ -30,8 +31,8 @@ export const DEFAULT_CFG = {
   }
 };
 
-const normalizeCfg = (cfg) => {
-  const base = {
+const normalizeCfg = (cfg: Partial<AppConfig> | null): AppConfig => {
+  const base: AppConfig = {
     ...DEFAULT_CFG,
     ...cfg,
     aiKeys: {
@@ -44,12 +45,12 @@ const normalizeCfg = (cfg) => {
     }
   };
 
-  if (cfg?.aiKey && cfg?.aiProvider && !base.aiKeys[cfg.aiProvider]) {
-    base.aiKeys[cfg.aiProvider] = cfg.aiKey;
+  if (cfg?.aiKey && cfg?.aiProvider && !base.aiKeys?.[cfg.aiProvider]) {
+    if (base.aiKeys) base.aiKeys[cfg.aiProvider] = cfg.aiKey;
   }
 
-  if (cfg?.ttsKey && cfg?.ttsProvider && base.ttsProvider !== 'browser' && !base.ttsKeys[cfg.ttsProvider]) {
-    base.ttsKeys[cfg.ttsProvider] = cfg.ttsKey;
+  if (cfg?.ttsKey && cfg?.ttsProvider && base.ttsProvider !== 'browser' && !base.ttsKeys?.[cfg.ttsProvider]) {
+    if (base.ttsKeys) base.ttsKeys[cfg.ttsProvider] = cfg.ttsKey;
   }
 
   if (!base.configUpdatedAt) {
@@ -59,19 +60,20 @@ const normalizeCfg = (cfg) => {
   return base;
 };
 
-const load = (k, d) => {
+const load = <T>(k: string, d: T): T => {
   try {
-    return JSON.parse(localStorage.getItem(k) || 'null') || d;
+    const item = localStorage.getItem(k);
+    return item ? JSON.parse(item) : d;
   } catch {
     return d;
   }
 };
 
 export function useStorage() {
-  const [stories, setStoriesState] = useState(() => load(SK, []));
-  const [deletedIds, setDeletedIds] = useState(() => load('bts_deleted_v2', []));
-  const [cfg, setCfgState] = useState(() => normalizeCfg(load(CK, DEFAULT_CFG)));
-  const [gToken, setGToken] = useState(() => sessionStorage.getItem(GT) || null);
+  const [stories, setStoriesState] = useState<StoryItem[]>(() => load(SK, []));
+  const [deletedIds, setDeletedIds] = useState<(string | number)[]>(() => load('bts_deleted_v2', []));
+  const [cfg, setCfgState] = useState<AppConfig>(() => normalizeCfg(load(CK, null)));
+  const [gToken, setGToken] = useState<string | null>(() => sessionStorage.getItem(GT) || null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const getStoredExpiry = useCallback(() => Number(sessionStorage.getItem(GTE) || '0'), []);
@@ -79,19 +81,22 @@ export function useStorage() {
     const expiresAt = getStoredExpiry();
     return !!gToken && !!expiresAt && Date.now() < expiresAt - 60_000;
   }, [gToken, getStoredExpiry]);
+  
   const clearDriveToken = useCallback(() => {
     sessionStorage.removeItem(GT);
     sessionStorage.removeItem(GTE);
     setGToken(null);
   }, []);
-  const persistDriveToken = useCallback(({ accessToken, expiresIn }) => {
+  
+  const persistDriveToken = useCallback(({ accessToken, expiresIn }: { accessToken: string; expiresIn: number }) => {
     const expiresAt = Date.now() + Math.max(0, expiresIn - 30) * 1000;
     sessionStorage.setItem(GT, accessToken);
     sessionStorage.setItem(GTE, String(expiresAt));
     setGToken(accessToken);
     return accessToken;
   }, []);
-  const requestToken = useCallback((interactive) => new Promise((resolve, reject) => {
+  
+  const requestToken = useCallback((interactive: boolean) => new Promise<string>((resolve, reject) => {
     requestDriveAccess(
       (tokenInfo) => resolve(persistDriveToken(tokenInfo)),
       (err) => reject(err),
@@ -99,7 +104,7 @@ export function useStorage() {
     );
   }), [persistDriveToken]);
 
-  const saveCfg = (c) => {
+  const saveCfg = (c: Partial<AppConfig>) => {
     const normalized = normalizeCfg({
       ...c,
       configUpdatedAt: new Date().toISOString()
@@ -110,8 +115,8 @@ export function useStorage() {
     if (gToken) handleDriveSync(false);
   };
 
-  const saveStory = (text, lang) => {
-    const upd = [{ id: Date.now(), text, date: new Date().toISOString(), lang }, ...stories];
+  const saveStory = (text: string, lang: Language) => {
+    const upd: StoryItem[] = [{ id: Date.now(), text, date: new Date().toISOString(), lang }, ...stories];
     setStoriesState(upd);
     localStorage.setItem(SK, JSON.stringify(upd));
     
@@ -119,7 +124,7 @@ export function useStorage() {
     if (gToken) handleDriveSync(false);
   };
 
-  const delStory = (id) => {
+  const delStory = (id: string | number) => {
     const upd = stories.filter((s) => s.id !== id);
     setStoriesState(upd);
     localStorage.setItem(SK, JSON.stringify(upd));
@@ -132,13 +137,13 @@ export function useStorage() {
     if (gToken) handleDriveSync(false);
   };
 
-  const doSync = useCallback(async (token) => {
+  const doSync = useCallback(async (token: string) => {
     setIsSyncing(true);
     try {
       // 避免 React 閉包陷阱，永遠從 localStorage 抓取按下同步那一瞬間的最真實資料
       const currentStories = JSON.parse(localStorage.getItem(SK) || '[]');
       const currentDeletedIds = JSON.parse(localStorage.getItem('bts_deleted_v2') || '[]');
-      const currentCfg = normalizeCfg(JSON.parse(localStorage.getItem(CK) || 'null') || DEFAULT_CFG);
+      const currentCfg = normalizeCfg(JSON.parse(localStorage.getItem(CK) || 'null'));
       
       const payload = await syncWithDrive(token, currentStories, currentDeletedIds, currentCfg);
       
@@ -162,9 +167,9 @@ export function useStorage() {
       });
       setCfgState(mergedCfg);
       localStorage.setItem(CK, JSON.stringify(mergedCfg));
-    } catch (e) {
+    } catch (e: any) {
       // 偵測 401 Unauthorized 或 403 Forbidden
-      if (e.message.includes('[401]') || e.message.includes('[403]') || e.message.toLowerCase().includes('invalid authentication')) {
+      if (e.message?.includes('[401]') || e.message?.includes('[403]') || e.message?.toLowerCase().includes('invalid authentication')) {
         console.warn('Authentication expired or invalid, clearing token...');
         clearDriveToken();
       }
@@ -188,7 +193,7 @@ export function useStorage() {
       }
       if (!token) return;
       await doSync(token);
-    } catch (err) {
+    } catch (err: any) {
       if (!interactive) {
         clearDriveToken();
         return;
