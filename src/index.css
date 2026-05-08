@@ -49,6 +49,7 @@ html, body {
   padding: 0 18px 56px;
   animation: fadeUp .35s ease both;
 }
+
 .moon-anim { animation: float 3.8s ease-in-out infinite; display: inline-block; }
 
 /* Cards */
