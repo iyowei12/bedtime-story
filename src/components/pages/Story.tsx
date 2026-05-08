@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
-import { playBrowser, playElevenLabs, playOpenAITTS, playGoogleTTS, stopBrowserTTS } from '../../services/tts';
-import { bgm } from '../../services/bgm';
+import { playBrowser, stopBrowserTTS, playTTS } from '../../services/tts';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { AppConfig, Language } from '../../types';
 
@@ -30,14 +29,6 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   useEffect(() => {
     setSaved(isAlreadySaved);
   }, [isAlreadySaved, story]);
-
-  useEffect(() => {
-    if (playing && cfg.bgmEnabled !== false) {
-      bgm.play(cfg.bgmType || 'musicbox', cfg.bgmVolume ?? 0.15);
-    } else {
-      bgm.pause();
-    }
-  }, [playing, cfg.bgmEnabled, cfg.bgmType, cfg.bgmVolume]);
 
   const stopAll = () => {
     stopBrowserTTS();
@@ -90,12 +81,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     setLoadingTTS(true);
     try {
       const args = { story, lang, cfg, audioRef, onEnd, setPlaying };
-      switch (cfg.ttsProvider) {
-        case 'elevenlabs': await playElevenLabs(args); break;
-        case 'openai': await playOpenAITTS(args); break;
-        case 'google': await playGoogleTTS(args); break;
-        default: playBrowser(args);
-      }
+      await playTTS(args);
     } catch (e: unknown) {
       alert('TTS Error: ' + (e instanceof Error ? e.message : String(e)));
       setPlaying(false);
@@ -132,7 +118,7 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
       handlePlay();
     }
   };
-  useEffect(() => () => { stopAll(); bgm.stop(); }, []);
+  useEffect(() => () => { stopAll(); }, []);
 
   return (
     <>

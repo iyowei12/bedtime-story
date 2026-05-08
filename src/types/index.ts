@@ -51,3 +51,25 @@ export interface StoryItem {
   lang: Language;
   audioUrl?: string;
 }
+
+export type TTSState = 'playing' | 'paused' | 'stopped' | 'ended';
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'success';
+
+export type BusEvents = {
+  // Audio Module
+  'audio:tts_started': void;
+  'audio:tts_ended': void;
+  'audio:tts_state_changed': TTSState;
+  
+  // Storage & Sync Module
+  'storage:changed': { type: 'cfg' | 'stories'; data?: unknown };
+  'sync:request': { interactive: boolean };
+  'sync:status': SyncStatus;
+  
+  // Business Logic Module
+  'story:request_generate': { imgs: string[]; len: StoryLength; cfg: AppConfig; lang: Language };
+  'story:ready': { text: string };
+  
+  // Core Infrastructure
+  'app:error': { message: string; source?: string };
+};

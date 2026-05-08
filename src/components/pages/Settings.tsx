@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { T } from '../../locales/translations';
 import { bgm } from '../../services/bgm';
-import { AppConfig, Language, AIProvider, TTSProvider } from '../../types';
+import { AppConfig, Language, AIProvider, TTSProvider, SyncStatus } from '../../types';
 
 interface SettingsPageProps {
   cfg: AppConfig;
   onSave: (cfg: AppConfig) => void;
-  gToken: string | null;
-  isSyncing: boolean;
+  syncStatus: SyncStatus;
+  isLoggedIn: boolean;
   onSync: (interactive: boolean) => void;
   lang: Language;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,7 +17,7 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({
-  cfg, onSave, gToken, isSyncing, onSync, lang, deferredPrompt, setDeferredPrompt
+  cfg, onSave, syncStatus, isLoggedIn, onSync, lang, deferredPrompt, setDeferredPrompt
 }: SettingsPageProps) {
   const t = T[lang];
   const [v, setV] = useState<AppConfig>(cfg);
@@ -137,13 +137,13 @@ export function SettingsPage({
         <div style={{ fontSize: 13, color: '#a8b8d5' }}>
           ☁️ {lang === 'zh' ? 'Google 雲端備份' : 'Google Drive Sync'}
         </div>
-        {!gToken ? (
+        {!isLoggedIn ? (
           <button className="btn-ghost-sm" style={{ margin: 0 }} onClick={() => onSync(true)}>
             {lang === 'zh' ? '授權登入' : 'Login'}
           </button>
         ) : (
-          <button className="btn-ghost-sm" style={{ margin: 0, color: isSyncing ? '#e2b96f' : '#6fcf97' }} disabled={isSyncing} onClick={() => onSync(true)}>
-            {isSyncing ? (lang === 'zh' ? '🔄 同步中...' : 'Syncing...') : (lang === 'zh' ? '✅ 已連線 (立刻同步)' : '✅ Synced (Sync now)')}
+          <button className="btn-ghost-sm" style={{ margin: 0, color: syncStatus === 'syncing' ? '#e2b96f' : '#6fcf97' }} disabled={syncStatus === 'syncing'} onClick={() => onSync(true)}>
+            {syncStatus === 'syncing' ? (lang === 'zh' ? '🔄 同步中...' : 'Syncing...') : (lang === 'zh' ? '✅ 已連線 (立刻同步)' : '✅ Synced (Sync now)')}
           </button>
         )}
       </div>

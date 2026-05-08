@@ -6,7 +6,7 @@ import { StoryPage } from './components/pages/Story';
 import { LibraryPage } from './components/pages/Library';
 import { HomePage } from './components/pages/Home';
 import { useStorage } from './hooks/useStorage';
-import { generateStory } from './services/llm';
+import { bus } from './core/bus';
 import { T } from './locales/translations';
 
 import { Language, StoryLength, AppConfig } from './types';
@@ -21,7 +21,7 @@ export default function App() {
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const { stories, cfg, gToken, isSyncing, saveCfg, saveStory, delStory, handleDriveSync } = useStorage();
+  const { stories, cfg, syncStatus, isLoggedIn, saveCfg, saveStory, delStory } = useStorage();
   const t = T[lang];
 
   useEffect(() => {
@@ -43,18 +43,30 @@ export default function App() {
     return () => window.removeEventListener('beforeinstallprompt' as any, handleBIP);
   }, []);
 
-  const handleGenerate = async () => {
-    if (imgs.length === 0) { setError(t.noPhoto); return; }
-    setError(''); setPage('loading');
-    
-    try {
-      const text = await generateStory({ imgs, len, cfg, lang });
+  useEffect(() => {
+    const onStoryReady = ({ text }: { text: string }) => {
       setStory(text);
       setPage('story');
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-      setPage('home');
-    }
+    };
+    const onAppError = ({ message }: { message: string }) => {
+      setError(message);
+      if (page === 'loading') setPage('home'); // 如果在載入中報錯，退回首頁
+      else alert(message); // 如果在其他地方報錯，直接顯示 (Toast 替代方案)
+    };
+
+    bus.on('story:ready', onStoryReady);
+    bus.on('app:error', onAppError);
+
+    return () => {
+      bus.off('story:ready', onStoryReady);
+      bus.off('app:error', onAppError);
+    };
+  }, [page]);
+
+  const handleGenerate = () => {
+    if (imgs.length === 0) { setError(t.noPhoto); return; }
+    setError(''); setPage('loading');
+    bus.emit('story:request_generate', { imgs, len, cfg, lang });
   };
 
   const handleSaveCfg = (c: Partial<AppConfig>) => {
@@ -68,7 +80,7 @@ export default function App() {
 
   if (page === 'settings') return wrap(
     <SettingsPage cfg={cfg} onSave={handleSaveCfg}
-      gToken={gToken} isSyncing={isSyncing} onSync={handleDriveSync} lang={lang}
+      syncStatus={syncStatus} isLoggedIn={isLoggedIn} onSync={(interactive) => bus.emit('sync:request', { interactive })} lang={lang}
       deferredPrompt={deferredPrompt} setDeferredPrompt={setDeferredPrompt} />
   );
   if (page === 'loading') return wrap(<LoadingPage lang={lang} />);

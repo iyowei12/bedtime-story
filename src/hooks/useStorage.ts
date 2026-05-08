@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { requestDriveAccess, syncWithDrive } from '../services/drive';
-import { AppConfig, StoryItem, Language } from '../types';
+import { useState, useEffect } from 'react';
+import { bus } from '../core/bus';
+import { AppConfig, StoryItem, Language, SyncStatus } from '../types';
 
 const SK = 'bts_stories_v2';
 const CK = 'bts_config_v2';
-const GT = 'GD_TOKEN';
-const GTE = 'GD_TOKEN_EXPIRES_AT';
 
 export const DEFAULT_CFG: AppConfig = {
   childName: '',
@@ -73,36 +71,33 @@ export function useStorage() {
   const [stories, setStoriesState] = useState<StoryItem[]>(() => load(SK, []));
   const [deletedIds, setDeletedIds] = useState<(string | number)[]>(() => load('bts_deleted_v2', []));
   const [cfg, setCfgState] = useState<AppConfig>(() => normalizeCfg(load(CK, null)));
-  const [gToken, setGToken] = useState<string | null>(() => sessionStorage.getItem(GT) || null);
-  const [isSyncing, setIsSyncing] = useState(false);
+  
+  // 提供給 UI 的同步狀態
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const isLoggedIn = !!sessionStorage.getItem('GD_TOKEN');
 
-  const getStoredExpiry = useCallback(() => Number(sessionStorage.getItem(GTE) || '0'), []);
-  const isTokenFresh = useCallback(() => {
-    const expiresAt = getStoredExpiry();
-    return !!gToken && !!expiresAt && Date.now() < expiresAt - 60_000;
-  }, [gToken, getStoredExpiry]);
-  
-  const clearDriveToken = useCallback(() => {
-    sessionStorage.removeItem(GT);
-    sessionStorage.removeItem(GTE);
-    setGToken(null);
+  useEffect(() => {
+    const onStorageChanged = (payload: { type: string, data?: unknown }) => {
+      // 來自 SyncService 或其他 Tab 的變更，更新 React 狀態
+      if (payload.type === 'cfg' && payload.data) {
+        setCfgState(normalizeCfg(payload.data as Partial<AppConfig>));
+      } else if (payload.type === 'stories' && payload.data) {
+        setStoriesState(payload.data as StoryItem[]);
+      }
+    };
+    
+    const onSyncStatus = (status: SyncStatus) => {
+      setSyncStatus(status);
+    };
+
+    bus.on('storage:changed', onStorageChanged);
+    bus.on('sync:status', onSyncStatus);
+
+    return () => {
+      bus.off('storage:changed', onStorageChanged);
+      bus.off('sync:status', onSyncStatus);
+    };
   }, []);
-  
-  const persistDriveToken = useCallback(({ accessToken, expiresIn }: { accessToken: string; expiresIn: number }) => {
-    const expiresAt = Date.now() + Math.max(0, expiresIn - 30) * 1000;
-    sessionStorage.setItem(GT, accessToken);
-    sessionStorage.setItem(GTE, String(expiresAt));
-    setGToken(accessToken);
-    return accessToken;
-  }, []);
-  
-  const requestToken = useCallback((interactive: boolean) => new Promise<string>((resolve, reject) => {
-    requestDriveAccess(
-      (tokenInfo) => resolve(persistDriveToken(tokenInfo)),
-      (err) => reject(err),
-      { prompt: interactive ? '' : 'none' }
-    );
-  }), [persistDriveToken]);
 
   const saveCfg = (c: Partial<AppConfig>) => {
     const normalized = normalizeCfg({
@@ -111,17 +106,14 @@ export function useStorage() {
     });
     setCfgState(normalized);
     localStorage.setItem(CK, JSON.stringify(normalized));
-
-    if (gToken) handleDriveSync(false);
+    bus.emit('storage:changed', { type: 'cfg', data: normalized });
   };
 
   const saveStory = (text: string, lang: Language) => {
     const upd: StoryItem[] = [{ id: Date.now(), text, date: new Date().toISOString(), lang }, ...stories];
     setStoriesState(upd);
     localStorage.setItem(SK, JSON.stringify(upd));
-    
-    // 儲存新故事時也自動觸發背景同步
-    if (gToken) handleDriveSync(false);
+    bus.emit('storage:changed', { type: 'stories', data: upd });
   };
 
   const delStory = (id: string | number) => {
@@ -129,87 +121,15 @@ export function useStorage() {
     setStoriesState(upd);
     localStorage.setItem(SK, JSON.stringify(upd));
     
-    // 紀錄刪除清單，避免被雲端復活
     const newDel = [...deletedIds, id];
     setDeletedIds(newDel);
     localStorage.setItem('bts_deleted_v2', JSON.stringify(newDel));
-
-    if (gToken) handleDriveSync(false);
+    
+    bus.emit('storage:changed', { type: 'stories', data: upd });
   };
 
-  const doSync = useCallback(async (token: string) => {
-    setIsSyncing(true);
-    try {
-      // 避免 React 閉包陷阱，永遠從 localStorage 抓取按下同步那一瞬間的最真實資料
-      const currentStories = JSON.parse(localStorage.getItem(SK) || '[]');
-      const currentDeletedIds = JSON.parse(localStorage.getItem('bts_deleted_v2') || '[]');
-      const currentCfg = normalizeCfg(JSON.parse(localStorage.getItem(CK) || 'null'));
-      
-      const payload = await syncWithDrive(token, currentStories, currentDeletedIds, currentCfg);
-      
-      // 更新故事合輯
-      setStoriesState(payload.stories);
-      localStorage.setItem(SK, JSON.stringify(payload.stories));
-
-      // 更新雲端共同維護的死亡筆記本
-      setDeletedIds(payload.deletedIds);
-      localStorage.setItem('bts_deleted_v2', JSON.stringify(payload.deletedIds));
-
-      const mergedCfg = normalizeCfg({
-        ...currentCfg,
-        childName: payload.childName ?? currentCfg.childName,
-        childNameEn: payload.childNameEn ?? currentCfg.childNameEn,
-        nameHistory: payload.nameHistory ?? currentCfg.nameHistory,
-        bgmEnabled: payload.bgmEnabled ?? currentCfg.bgmEnabled,
-        bgmType: payload.bgmType ?? currentCfg.bgmType,
-        bgmVolume: payload.bgmVolume ?? currentCfg.bgmVolume,
-        configUpdatedAt: payload.configUpdatedAt ?? currentCfg.configUpdatedAt
-      });
-      setCfgState(mergedCfg);
-      localStorage.setItem(CK, JSON.stringify(mergedCfg));
-    } catch (e: unknown) {
-      // 偵測 401 Unauthorized 或 403 Forbidden
-      const errMsg = e instanceof Error ? e.message : String(e);
-      if (errMsg.includes('[401]') || errMsg.includes('[403]') || errMsg.toLowerCase().includes('invalid authentication')) {
-        console.warn('Authentication expired or invalid, clearing token...');
-        clearDriveToken();
-      }
-      console.warn('Sync failed:', e);
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [clearDriveToken]);
-
-  const handleDriveSync = useCallback(async (interactive = true) => {
-    if (!interactive && !gToken) return;
-
-    try {
-      let token = gToken;
-      if (!isTokenFresh()) {
-        if (!interactive) {
-          clearDriveToken();
-          return;
-        }
-        token = await requestToken(true);
-      }
-      if (!token) return;
-      await doSync(token);
-    } catch (err: unknown) {
-      if (!interactive) {
-        clearDriveToken();
-        return;
-      }
-      alert('Google Auth Error: ' + (err instanceof Error ? err.message : String(err)));
-    }
-  }, [clearDriveToken, doSync, gToken, isTokenFresh, requestToken]);
-
-  // 進入網頁如果有 token 就偷合同步
-  useEffect(() => {
-    if (gToken) handleDriveSync(false);
-  }, [gToken, handleDriveSync]);
-
   return {
-    stories, cfg, gToken, isSyncing,
-    saveCfg, saveStory, delStory, handleDriveSync
+    stories, cfg, syncStatus, isLoggedIn,
+    saveCfg, saveStory, delStory
   };
 }

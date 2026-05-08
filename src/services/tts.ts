@@ -1,4 +1,5 @@
 import { AppConfig, Language } from '../types';
+import { bus } from '../core/bus';
 
 export const playBlob = (
   url: string,
@@ -8,8 +9,19 @@ export const playBlob = (
 ) => {
   const a = new Audio(url);
   if (audioRef) audioRef.current = a;
-  a.onended = onEnd;
-  a.onerror = () => setPlaying(false);
+  a.onended = () => {
+    bus.emit('audio:tts_state_changed', 'ended');
+    bus.emit('audio:tts_ended');
+    onEnd();
+  };
+  a.onerror = () => {
+    bus.emit('audio:tts_state_changed', 'stopped');
+    bus.emit('audio:tts_ended');
+    setPlaying(false);
+  };
+  
+  bus.emit('audio:tts_state_changed', 'playing');
+  bus.emit('audio:tts_started');
   a.play();
   setPlaying(true);
 };
@@ -56,6 +68,8 @@ export const stopBrowserTTS = () => {
     activeBrowserUtterance = null;
   }
   if (window.speechSynthesis) {
+    bus.emit('audio:tts_state_changed', 'stopped');
+    bus.emit('audio:tts_ended');
     window.speechSynthesis.cancel();
   }
 };
@@ -84,9 +98,19 @@ export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }: PlayTTSPara
   const pref = findPreferredBrowserVoice(vs, lang, cfg?.browserVoice);
   if (pref) u.voice = pref;
   
-  u.onend = onEnd;
-  u.onerror = () => setPlaying(false);
+  u.onend = () => {
+    bus.emit('audio:tts_state_changed', 'ended');
+    bus.emit('audio:tts_ended');
+    onEnd();
+  };
+  u.onerror = () => {
+    bus.emit('audio:tts_state_changed', 'stopped');
+    bus.emit('audio:tts_ended');
+    setPlaying(false);
+  };
   
+  bus.emit('audio:tts_state_changed', 'playing');
+  bus.emit('audio:tts_started');
   window.speechSynthesis.speak(u);
   setPlaying(true);
 };
@@ -200,5 +224,14 @@ export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
   const d = await r.json();
   if (d.error) throw new Error(d.error.message);
   playBlob(`data:audio/mp3;base64,${d.audioContent}`, audioRef, onEnd, setPlaying);
+};
+
+export const playTTS = async (args: PlayTTSBlobParams) => {
+  switch (args.cfg.ttsProvider) {
+    case 'elevenlabs': await playElevenLabs(args); break;
+    case 'openai': await playOpenAITTS(args); break;
+    case 'google': await playGoogleTTS(args); break;
+    default: playBrowser(args);
+  }
 };
 
