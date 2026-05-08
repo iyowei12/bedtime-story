@@ -1,29 +1,57 @@
 import { AppConfig, Language } from '../types';
 import { bus } from '../core/bus';
 
-export const playBlob = (
-  url: string,
-  audioRef: React.RefObject<HTMLAudioElement | null> | null,
-  onEnd: () => void,
-  setPlaying: (playing: boolean) => void
-) => {
-  const a = new Audio(url);
-  if (audioRef) audioRef.current = a;
-  a.onended = () => {
+let globalAudio: HTMLAudioElement | null = null;
+
+export const playBlob = (url: string) => {
+  if (globalAudio) {
+    globalAudio.pause();
+  }
+  globalAudio = new Audio(url);
+  globalAudio.onended = () => {
     bus.emit('audio:tts_state_changed', 'ended');
     bus.emit('audio:tts_ended');
-    onEnd();
   };
-  a.onerror = () => {
+  globalAudio.onerror = () => {
     bus.emit('audio:tts_state_changed', 'stopped');
     bus.emit('audio:tts_ended');
-    setPlaying(false);
   };
   
   bus.emit('audio:tts_state_changed', 'playing');
   bus.emit('audio:tts_started');
-  a.play();
-  setPlaying(true);
+  globalAudio.play().catch(console.error);
+};
+
+export const pauseTTS = () => {
+  if (globalAudio && !globalAudio.paused) {
+    globalAudio.pause();
+    bus.emit('audio:tts_state_changed', 'paused');
+  }
+  if (window.speechSynthesis && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+    window.speechSynthesis.pause();
+    bus.emit('audio:tts_state_changed', 'paused');
+  }
+};
+
+export const resumeTTS = () => {
+  if (globalAudio && globalAudio.paused) {
+    globalAudio.play().catch(console.error);
+    bus.emit('audio:tts_state_changed', 'playing');
+  }
+  if (window.speechSynthesis && window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+    bus.emit('audio:tts_state_changed', 'playing');
+  }
+};
+
+export const stopTTS = () => {
+  if (globalAudio) {
+    globalAudio.pause();
+    globalAudio.currentTime = 0;
+    bus.emit('audio:tts_state_changed', 'stopped');
+    bus.emit('audio:tts_ended');
+  }
+  stopBrowserTTS();
 };
 
 const getTtsKey = (cfg: AppConfig, provider: string) => cfg.ttsKeys?.[provider]?.trim() || cfg.ttsKey?.trim() || '';
@@ -74,21 +102,15 @@ export const stopBrowserTTS = () => {
   }
 };
 
-interface PlayTTSParams {
+export interface PlayTTSParams {
   story: string;
   lang: Language;
   cfg: AppConfig;
-  onEnd: () => void;
-  setPlaying: (playing: boolean) => void;
 }
 
-interface PlayTTSBlobParams extends PlayTTSParams {
-  audioRef: React.RefObject<HTMLAudioElement | null> | null;
-}
-
-export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }: PlayTTSParams) => {
+export const playBrowser = ({ story, lang, cfg }: PlayTTSParams) => {
   if (!window.speechSynthesis) return;
-  stopBrowserTTS();
+  stopTTS(); // 統一停止先前的播放
   const u = new SpeechSynthesisUtterance(story);
   activeBrowserUtterance = u;
   u.lang = lang === 'zh' ? 'zh-TW' : 'en-US';
@@ -101,21 +123,18 @@ export const playBrowser = ({ story, lang, cfg, onEnd, setPlaying }: PlayTTSPara
   u.onend = () => {
     bus.emit('audio:tts_state_changed', 'ended');
     bus.emit('audio:tts_ended');
-    onEnd();
   };
   u.onerror = () => {
     bus.emit('audio:tts_state_changed', 'stopped');
     bus.emit('audio:tts_ended');
-    setPlaying(false);
   };
   
   bus.emit('audio:tts_state_changed', 'playing');
   bus.emit('audio:tts_started');
   window.speechSynthesis.speak(u);
-  setPlaying(true);
 };
 
-export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }: PlayTTSBlobParams) => {
+export const playElevenLabs = async ({ story, lang, cfg }: PlayTTSParams) => {
   const k = getTtsKey(cfg, 'elevenlabs');
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 ElevenLabs API Key' : 'Please add ElevenLabs API Key in Settings');
@@ -158,10 +177,10 @@ export const playElevenLabs = async ({ story, lang, cfg, audioRef, onEnd, setPla
     }
     throw new Error(`ElevenLabs: ${r.status}${detail ? ` - ${detail}` : ''}`);
   }
-  playBlob(URL.createObjectURL(await r.blob()), audioRef, onEnd, setPlaying);
+  playBlob(URL.createObjectURL(await r.blob()));
 };
 
-export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }: PlayTTSBlobParams) => {
+export const playOpenAITTS = async ({ story, lang, cfg }: PlayTTSParams) => {
   const k = getOpenAIKey(cfg);
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 OpenAI API Key' : 'Please add OpenAI API Key in Settings');
@@ -200,10 +219,10 @@ export const playOpenAITTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
     }
     throw new Error(`OpenAI TTS: ${r.status}${detail ? ` - ${detail}` : ''}`);
   }
-  playBlob(URL.createObjectURL(await r.blob()), audioRef, onEnd, setPlaying);
+  playBlob(URL.createObjectURL(await r.blob()));
 };
 
-export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlaying }: PlayTTSBlobParams) => {
+export const playGoogleTTS = async ({ story, lang, cfg }: PlayTTSParams) => {
   const k = getTtsKey(cfg, 'google');
   if (!k) {
     alert(lang === 'zh' ? '請先在設定中填入 Google Cloud TTS API Key' : 'Please add Google Cloud TTS API Key in Settings');
@@ -223,10 +242,10 @@ export const playGoogleTTS = async ({ story, lang, cfg, audioRef, onEnd, setPlay
   });
   const d = await r.json();
   if (d.error) throw new Error(d.error.message);
-  playBlob(`data:audio/mp3;base64,${d.audioContent}`, audioRef, onEnd, setPlaying);
+  playBlob(`data:audio/mp3;base64,${d.audioContent}`);
 };
 
-export const playTTS = async (args: PlayTTSBlobParams) => {
+export const playTTS = async (args: PlayTTSParams) => {
   switch (args.cfg.ttsProvider) {
     case 'elevenlabs': await playElevenLabs(args); break;
     case 'openai': await playOpenAITTS(args); break;

@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
 import { AppConfig, Language, StoryLength } from '../../types';
+import { compressImage } from '../../utils/image';
 
 interface HomePageProps {
   lang: Language;
@@ -38,26 +39,7 @@ export function HomePage({
     const slotsLeft = 3 - imgs.length;
     const filesToProcess = files.slice(0, slotsLeft);
     
-    const newImgs = await Promise.all(filesToProcess.map(f => {
-      return new Promise<string>(resolve => {
-        const r = new FileReader();
-        r.onload = ev => {
-          const im = new Image();
-          im.onload = () => {
-            const MAX = 1200;
-            const ratio = Math.min(MAX / im.width, MAX / im.height, 1);
-            const c = document.createElement('canvas');
-            c.width = Math.round(im.width * ratio);
-            c.height = Math.round(im.height * ratio);
-            const ctx = c.getContext('2d');
-            if (ctx) ctx.drawImage(im, 0, 0, c.width, c.height);
-            resolve(c.toDataURL('image/jpeg', 0.85));
-          };
-          im.src = ev.target?.result as string;
-        };
-        r.readAsDataURL(f);
-      });
-    }));
+    const newImgs = await Promise.all(filesToProcess.map(f => compressImage(f)));
     
     setImgs(prev => [...prev, ...newImgs].slice(0, 3));
   };

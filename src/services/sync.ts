@@ -1,9 +1,8 @@
 import { bus } from '../core/bus';
 import { requestDriveAccess, syncWithDrive } from './drive';
+import { normalizeCfg } from '../core/config';
 
-// We need to duplicate or import normalizeCfg. For now, we redefine a simple version or expect payload to be normalized.
-// Better: we'll import normalizeCfg from useStorage later, or we can just rely on the UI to normalize.
-// Actually, doSync was parsing localStorage.
+// 移除原有的 TODO 註解，改為直接依賴 core/config
 const SK = 'bts_stories_v2';
 const CK = 'bts_config_v2';
 const GT = 'GD_TOKEN';
@@ -87,7 +86,7 @@ class SyncService {
       localStorage.setItem(SK, JSON.stringify(payload.stories));
       localStorage.setItem('bts_deleted_v2', JSON.stringify(payload.deletedIds));
 
-      const mergedCfg = {
+      const mergedCfg = normalizeCfg({
         ...currentCfg,
         childName: payload.childName ?? currentCfg.childName,
         childNameEn: payload.childNameEn ?? currentCfg.childNameEn,
@@ -96,7 +95,7 @@ class SyncService {
         bgmType: payload.bgmType ?? currentCfg.bgmType,
         bgmVolume: payload.bgmVolume ?? currentCfg.bgmVolume,
         configUpdatedAt: payload.configUpdatedAt ?? currentCfg.configUpdatedAt
-      };
+      });
       localStorage.setItem(CK, JSON.stringify(mergedCfg));
       
       // 告訴 UI 去重取 LocalStorage，並標記來源為 'sync' 避免循環觸發

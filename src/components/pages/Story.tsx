@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { bus } from '../../core/bus';
 import { Moon } from '../ui/Moon';
 import { T } from '../../locales/translations';
-import { playBrowser, stopBrowserTTS, playTTS } from '../../services/tts';
+import { playTTS, pauseTTS, resumeTTS, stopTTS } from '../../services/tts';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { AppConfig, Language } from '../../types';
 
@@ -23,19 +24,24 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
   const [copied, setCopied] = useState(false);
   const [showTTSModal, setShowTTSModal] = useState(false);
   const [saved, setSaved] = useState(isAlreadySaved);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const browserPaused = useRef(false);
+  const [audioLoaded, setAudioLoaded] = useState(false);
 
   useEffect(() => {
     setSaved(isAlreadySaved);
   }, [isAlreadySaved, story]);
 
-  const stopAll = () => {
-    stopBrowserTTS();
-    browserPaused.current = false;
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    setPlaying(false);
-  };
+  useEffect(() => {
+    const onStateChange = (state: string) => {
+      if (state === 'playing') setPlaying(true);
+      if (state === 'paused' || state === 'stopped' || state === 'ended') setPlaying(false);
+      if (state === 'ended') setDimmed(true);
+    };
+    bus.on('audio:tts_state_changed', onStateChange);
+    return () => {
+      bus.off('audio:tts_state_changed', onStateChange);
+      stopTTS();
+    };
+  }, []);
   
   const handleCopy = () => {
     navigator.clipboard.writeText(story).then(() => {
@@ -45,80 +51,44 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
     });
   };
 
-  const onEnd = () => { 
-    setPlaying(false); 
-    setDimmed(true); 
-    browserPaused.current = false;
-  };
+
 
   const handlePlay = async () => {
-    // 若正在播放，則暫停（保留記憶體中的音檔）
-    if (playing) { 
-      if (audioRef.current) audioRef.current.pause();
-      if (cfg.ttsProvider === 'browser' && window.speechSynthesis) {
-        window.speechSynthesis.pause();
-        browserPaused.current = true;
-      }
-      setPlaying(false);
-      return; 
-    }
-    // 防連點
     if (loadingTTS) return;
 
-    if (audioRef.current) {
-      audioRef.current.play();
-      setPlaying(true);
-      return;
+    if (playing) { 
+      pauseTTS();
+      return; 
     }
-    if (cfg.ttsProvider === 'browser' && browserPaused.current && window.speechSynthesis) {
-      window.speechSynthesis.resume();
-      browserPaused.current = false;
-      setPlaying(true);
+
+    if (audioLoaded) {
+      resumeTTS();
       return;
     }
     
-    // 第一次點擊朗讀，去跟雲端討聲音檔
+    // 第一次點擊朗讀
     setLoadingTTS(true);
     try {
-      const args = { story, lang, cfg, audioRef, onEnd, setPlaying };
-      await playTTS(args);
+      await playTTS({ story, lang, cfg });
+      setAudioLoaded(true);
     } catch (e: unknown) {
       alert('TTS Error: ' + (e instanceof Error ? e.message : String(e)));
-      setPlaying(false);
     } finally {
       setLoadingTTS(false);
     }
   };
 
   const handleRestart = () => { 
-    stopBrowserTTS();
-    browserPaused.current = false;
-    
     setDimmed(false); 
-
-    // 如果有雲端音軌，直接退回 0 秒重播
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(console.error);
-      setPlaying(true);
-      return;
-    }
+    stopTTS();
+    setAudioLoaded(false);
     
-    // 如果是網頁內建語音，直接重新發送整個長文句子去朗讀
-    if (cfg.ttsProvider === 'browser') {
-      setPlaying(true);
-      const args = { story, lang, cfg, audioRef, onEnd, setPlaying };
-      playBrowser(args);
-      return;
-    }
-
-    // 防連點：如果還沒播放過就按重新開始
-    if (!playing && !loadingTTS) {
-      handlePlay();
-    }
+    setLoadingTTS(true);
+    playTTS({ story, lang, cfg })
+      .then(() => setAudioLoaded(true))
+      .catch((e: unknown) => alert('TTS Error: ' + (e instanceof Error ? e.message : String(e))))
+      .finally(() => setLoadingTTS(false));
   };
-  useEffect(() => () => { stopAll(); }, []);
 
   return (
     <>
