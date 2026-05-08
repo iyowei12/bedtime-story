@@ -19,6 +19,7 @@ export default function App() {
   const [story, setStory] = useState<string>('');
   const [error, setError] = useState<string>('');
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const { stories, cfg, gToken, isSyncing, saveCfg, saveStory, delStory, handleDriveSync } = useStorage();
   const t = T[lang];
@@ -30,12 +31,15 @@ export default function App() {
     }
     
     // PWA Installation Prompt Capture
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleBIP = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       console.log('✅ PWA Install Prompt Captured!');
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     window.addEventListener('beforeinstallprompt' as any, handleBIP);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return () => window.removeEventListener('beforeinstallprompt' as any, handleBIP);
   }, []);
 
@@ -47,8 +51,8 @@ export default function App() {
       const text = await generateStory({ imgs, len, cfg, lang });
       setStory(text);
       setPage('story');
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
       setPage('home');
     }
   };

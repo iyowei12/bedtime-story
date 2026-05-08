@@ -96,8 +96,8 @@ export function StoryPage({ story, lang, cfg, isAlreadySaved, onSave, onBack, on
         case 'google': await playGoogleTTS(args); break;
         default: playBrowser(args);
       }
-    } catch (e: any) {
-      alert('TTS Error: ' + e.message);
+    } catch (e: unknown) {
+      alert('TTS Error: ' + (e instanceof Error ? e.message : String(e)));
       setPlaying(false);
     } finally {
       setLoadingTTS(false);

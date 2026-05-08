@@ -167,9 +167,10 @@ export function useStorage() {
       });
       setCfgState(mergedCfg);
       localStorage.setItem(CK, JSON.stringify(mergedCfg));
-    } catch (e: any) {
+    } catch (e: unknown) {
       // 偵測 401 Unauthorized 或 403 Forbidden
-      if (e.message?.includes('[401]') || e.message?.includes('[403]') || e.message?.toLowerCase().includes('invalid authentication')) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      if (errMsg.includes('[401]') || errMsg.includes('[403]') || errMsg.toLowerCase().includes('invalid authentication')) {
         console.warn('Authentication expired or invalid, clearing token...');
         clearDriveToken();
       }
@@ -193,12 +194,12 @@ export function useStorage() {
       }
       if (!token) return;
       await doSync(token);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!interactive) {
         clearDriveToken();
         return;
       }
-      alert('Google Auth Error: ' + err.message);
+      alert('Google Auth Error: ' + (err instanceof Error ? err.message : String(err)));
     }
   }, [clearDriveToken, doSync, gToken, isTokenFresh, requestToken]);
 

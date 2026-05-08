@@ -20,7 +20,12 @@ export async function generateStory({ imgs, len, cfg, lang }: GenerateStoryParam
   if (cfg.aiProvider === 'claude') {
     const key = getAiKey('claude');
     if (!key) throw new Error(lang === 'zh' ? '請先在設定中填入 Claude API Key' : 'Please add your Claude API Key in Settings');
-    const claudeContent: any[] = imgs.map(img => {
+    
+    type ClaudeContentPart = 
+      | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+      | { type: 'text'; text: string };
+
+    const claudeContent: ClaudeContentPart[] = imgs.map(img => {
       const b64 = img.split(',')[1];
       const mime = img.split(';')[0].split(':')[1] || 'image/jpeg';
       return { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } };
@@ -46,7 +51,12 @@ export async function generateStory({ imgs, len, cfg, lang }: GenerateStoryParam
   } else if (cfg.aiProvider === 'gemini') {
     const aiKeyClean = getAiKey('gemini');
     if (!aiKeyClean) throw new Error(lang === 'zh' ? '請先在設定中填入 Gemini API Key' : 'Please add your Gemini API Key in Settings');
-    const geminiParts: any[] = imgs.map(img => {
+    
+    type GeminiPart = 
+      | { inline_data: { mime_type: string; data: string } }
+      | { text: string };
+
+    const geminiParts: GeminiPart[] = imgs.map(img => {
       const b64 = img.split(',')[1];
       const mime = img.split(';')[0].split(':')[1] || 'image/jpeg';
       return { inline_data: { mime_type: mime, data: b64 } };
@@ -68,7 +78,12 @@ export async function generateStory({ imgs, len, cfg, lang }: GenerateStoryParam
   } else {
     const key = getAiKey('openai');
     if (!key) throw new Error(lang === 'zh' ? '請先在設定中填入 OpenAI API Key' : 'Please add your OpenAI API Key in Settings');
-    const openaiContent: any[] = imgs.map(img => ({ type: 'image_url', image_url: { url: img } }));
+    
+    type OpenAIContentPart = 
+      | { type: 'image_url'; image_url: { url: string } }
+      | { type: 'text'; text: string };
+
+    const openaiContent: OpenAIContentPart[] = imgs.map(img => ({ type: 'image_url', image_url: { url: img } }));
     openaiContent.push({ type: 'text', text: prompt });
 
     const r = await fetch('https://api.openai.com/v1/chat/completions', {

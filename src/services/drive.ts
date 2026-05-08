@@ -79,8 +79,8 @@ const findFile = async (token: string) => {
 // 統步合併邏輯：上傳本地 + 下載雲端
 export const syncWithDrive = async (token: string, localStories: StoryItem[], localDeletedIds: (string | number)[] = [], localCfg: AppConfig = {} as AppConfig) => {
   const file = await findFile(token);
-  let cloudData: any = null;
-  let fileId = file?.id;
+  let cloudData: unknown = null;
+  const fileId = file?.id as string | undefined;
 
   // 下載雲端現有資料
   if (fileId) {
@@ -103,12 +103,13 @@ export const syncWithDrive = async (token: string, localStories: StoryItem[], lo
   if (Array.isArray(cloudData)) {
     cloudStories = cloudData;
   } else if (cloudData && typeof cloudData === 'object') {
-    cloudStories = cloudData.stories || [];
-    cloudDeletedIds = cloudData.deletedIds || [];
-    cloudChildName = cloudData.childName || '';
-    cloudChildNameEn = cloudData.childNameEn || '';
-    cloudNameHistory = cloudData.nameHistory || [];
-    cloudConfigUpdatedAt = cloudData.configUpdatedAt || '';
+    const cd = cloudData as Record<string, unknown>;
+    cloudStories = (cd.stories as StoryItem[]) || [];
+    cloudDeletedIds = (cd.deletedIds as (string | number)[]) || [];
+    cloudChildName = (cd.childName as string) || '';
+    cloudChildNameEn = (cd.childNameEn as string) || '';
+    cloudNameHistory = (cd.nameHistory as NameProfile[]) || [];
+    cloudConfigUpdatedAt = (cd.configUpdatedAt as string) || '';
   }
 
   // 1. 合併「死亡筆記本」(已刪除 ID 列表)
@@ -160,9 +161,12 @@ export const syncWithDrive = async (token: string, localStories: StoryItem[], lo
     childName: mergedChildName,
     childNameEn: mergedChildNameEn,
     nameHistory: finalNameHistory,
-    bgmEnabled: shouldUseCloudCfg ? (cloudData?.bgmEnabled ?? localCfg.bgmEnabled) : (localCfg.bgmEnabled ?? cloudData?.bgmEnabled),
-    bgmType: shouldUseCloudCfg ? (cloudData?.bgmType || localCfg.bgmType) : (localCfg.bgmType || cloudData?.bgmType),
-    bgmVolume: shouldUseCloudCfg ? (cloudData?.bgmVolume ?? localCfg.bgmVolume) : (localCfg.bgmVolume ?? cloudData?.bgmVolume),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bgmEnabled: shouldUseCloudCfg ? ((cloudData as any)?.bgmEnabled ?? localCfg.bgmEnabled) : (localCfg.bgmEnabled ?? (cloudData as any)?.bgmEnabled),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bgmType: shouldUseCloudCfg ? ((cloudData as any)?.bgmType || localCfg.bgmType) : (localCfg.bgmType || (cloudData as any)?.bgmType),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bgmVolume: shouldUseCloudCfg ? ((cloudData as any)?.bgmVolume ?? localCfg.bgmVolume) : (localCfg.bgmVolume ?? (cloudData as any)?.bgmVolume),
     configUpdatedAt: mergedConfigUpdatedAt
   };
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });

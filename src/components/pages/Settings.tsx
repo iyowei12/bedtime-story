@@ -10,7 +10,9 @@ interface SettingsPageProps {
   isSyncing: boolean;
   onSync: (interactive: boolean) => void;
   lang: Language;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deferredPrompt: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setDeferredPrompt: (prompt: any) => void;
 }
 
@@ -113,7 +115,7 @@ export function SettingsPage({
     <div className="page" style={{ paddingTop: 38 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <button className="btn-ghost" onClick={() => {
-          let newV = { ...v };
+          const newV = { ...v };
           if (newV.childName?.trim() || newV.childNameEn?.trim()) {
             let h = newV.nameHistory || [];
             const zh = (newV.childName || '').trim();
