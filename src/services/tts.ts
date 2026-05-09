@@ -22,29 +22,62 @@ export const playBlob = (url: string) => {
   globalAudio.play().catch(console.error);
 };
 
+let resumeInterval: ReturnType<typeof setTimeout> | null = null;
+
 export const pauseTTS = () => {
+  if (resumeInterval) {
+    clearInterval(resumeInterval);
+    resumeInterval = null;
+  }
+
   if (globalAudio && !globalAudio.paused) {
     globalAudio.pause();
     bus.emit('audio:tts_state_changed', 'paused');
   }
-  if (window.speechSynthesis && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-    window.speechSynthesis.pause();
+  
+  if (window.speechSynthesis) {
+    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+      window.speechSynthesis.pause();
+    }
     bus.emit('audio:tts_state_changed', 'paused');
   }
 };
 
 export const resumeTTS = () => {
+  if (resumeInterval) clearInterval(resumeInterval);
+
   if (globalAudio && globalAudio.paused) {
     globalAudio.play().catch(console.error);
     bus.emit('audio:tts_state_changed', 'playing');
   }
-  if (window.speechSynthesis && window.speechSynthesis.paused) {
-    window.speechSynthesis.resume();
+  
+  if (window.speechSynthesis) {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    } else if (!window.speechSynthesis.speaking) {
+      // 狀態異常，嘗試重新發送結束信號讓 UI 重置
+      bus.emit('audio:tts_state_changed', 'stopped');
+      return;
+    }
     bus.emit('audio:tts_state_changed', 'playing');
+    
+    // 解決 Chrome 暫停 Bug: 週期性喚醒
+    resumeInterval = setInterval(() => {
+      if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      } else if (!window.speechSynthesis.speaking) {
+        if (resumeInterval) clearInterval(resumeInterval);
+        resumeInterval = null;
+      }
+    }, 5000);
   }
 };
 
 export const stopTTS = () => {
+  if (resumeInterval) {
+    clearInterval(resumeInterval);
+    resumeInterval = null;
+  }
   if (globalAudio) {
     globalAudio.pause();
     globalAudio.currentTime = 0;
