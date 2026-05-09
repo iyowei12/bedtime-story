@@ -23,7 +23,9 @@ class SyncService {
       }
     });
 
-    bus.on('storage:changed', () => {
+    bus.on('storage:changed', (payload) => {
+      if (payload?.source === 'sync') return; // 避免同步造成的循環觸發
+
       if (this.currentUid) {
         if (this.syncTimeout) clearTimeout(this.syncTimeout);
         this.syncTimeout = setTimeout(() => {
@@ -74,15 +76,27 @@ class SyncService {
         mergedStories = Array.from(storyMap.values());
         mergedDeletedIds = allDeleted;
 
-        // Merge Config (遠端設定優先，但絕對保留本地的 API Keys 不被覆蓋)
-        mergedCfg = normalizeCfg({
-          ...currentCfg,
-          ...remoteData.cfg,
-          aiKeys: currentCfg.aiKeys,
-          ttsKeys: currentCfg.ttsKeys,
-          aiKey: currentCfg.aiKey,
-          ttsKey: currentCfg.ttsKey,
-        });
+        // Merge Config (根據 timestamp 決定誰贏)
+        const remoteTime = remoteData.cfg?.configUpdatedAt ? new Date(remoteData.cfg.configUpdatedAt).getTime() : 0;
+        const localTime = currentCfg.configUpdatedAt ? new Date(currentCfg.configUpdatedAt).getTime() : 0;
+
+        if (remoteTime > localTime) {
+          // 雲端較新
+          mergedCfg = normalizeCfg({
+            ...currentCfg,
+            ...remoteData.cfg,
+            aiKeys: currentCfg.aiKeys,
+            ttsKeys: currentCfg.ttsKeys,
+            aiKey: currentCfg.aiKey,
+            ttsKey: currentCfg.ttsKey,
+          });
+        } else {
+          // 本地較新 (或是相等)
+          mergedCfg = normalizeCfg({
+            ...remoteData.cfg,
+            ...currentCfg,
+          });
+        }
       }
 
       // 3. Save to remote (移除所有 API Keys，不上傳到 Firebase)
@@ -105,8 +119,8 @@ class SyncService {
       localStorage.setItem(CK, JSON.stringify(mergedCfg));
       
       // 告訴 UI 去重取 LocalStorage，並標記來源為 'sync' 避免循環觸發
-      bus.emit('storage:changed', { type: 'cfg', data: mergedCfg });
-      bus.emit('storage:changed', { type: 'stories', data: mergedStories });
+      bus.emit('storage:changed', { type: 'cfg', data: mergedCfg, source: 'sync' });
+      bus.emit('storage:changed', { type: 'stories', data: mergedStories, source: 'sync' });
       bus.emit('sync:status', 'success');
 
     } catch (e: unknown) {

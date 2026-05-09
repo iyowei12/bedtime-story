@@ -63,7 +63,7 @@ export async function generateStory({ imgs, len, cfg, lang }: GenerateStoryParam
     });
     geminiParts.push({ text: prompt });
 
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${aiKeyClean}`, {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${aiKeyClean}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: geminiParts }] }),
     });

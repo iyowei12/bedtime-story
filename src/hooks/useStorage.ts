@@ -62,14 +62,14 @@ export function useStorage() {
     });
     setCfgState(normalized);
     localStorage.setItem(CK, JSON.stringify(normalized));
-    bus.emit('storage:changed', { type: 'cfg', data: normalized });
+    bus.emit('storage:changed', { type: 'cfg', data: normalized, source: 'user' });
   };
 
   const saveStory = (text: string, lang: Language) => {
     const upd: StoryItem[] = [{ id: Date.now(), text, date: new Date().toISOString(), lang }, ...stories];
     setStoriesState(upd);
     localStorage.setItem(SK, JSON.stringify(upd));
-    bus.emit('storage:changed', { type: 'stories', data: upd });
+    bus.emit('storage:changed', { type: 'stories', data: upd, source: 'user' });
   };
 
   const delStory = (id: string | number) => {
@@ -81,7 +81,7 @@ export function useStorage() {
     setDeletedIds(newDel);
     localStorage.setItem('bts_deleted_v2', JSON.stringify(newDel));
     
-    bus.emit('storage:changed', { type: 'stories', data: upd });
+    bus.emit('storage:changed', { type: 'stories', data: upd, source: 'user' });
   };
 
   return {

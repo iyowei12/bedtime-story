@@ -1,5 +1,5 @@
 export type AIProvider = 'openai' | 'claude' | 'gemini';
-export type TTSProvider = 'openai' | 'edge' | 'google' | 'azure' | 'browser' | 'elevenlabs';
+export type TTSProvider = 'openai' | 'google' | 'azure' | 'browser' | 'elevenlabs';
 import type { User } from 'firebase/auth';
 
 export type Language = 'zh' | 'en';
@@ -64,7 +64,7 @@ export type BusEvents = {
   'audio:tts_state_changed': TTSState;
   
   // Storage & Sync Module
-  'storage:changed': { type: 'cfg' | 'stories'; data?: unknown };
+  'storage:changed': { type: 'cfg' | 'stories'; data?: unknown; source?: 'sync' | 'user' };
   'sync:request': { interactive: boolean };
   'sync:status': SyncStatus;
   
